@@ -1,0 +1,2326 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motion ELD</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel для JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+                    },
+                    colors: {
+                        slate: {
+                            700: '#404040',
+                            800: '#262626',
+                            850: '#1f1f1f',
+                            900: '#171717',
+                            950: '#121212',
+                        }
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+                        'glow': '0 0 20px rgba(59, 130, 246, 0.15)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Кастомный скроллбар для премиального вида */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #404040; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #525252; }
+        
+        /* Плавность для всего приложения */
+        body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        
+        /* Скрытие скролла, где он не нужен визуально, но нужен функционально */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased selection:bg-blue-200 dark:selection:bg-blue-900 transition-colors duration-300">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        const Icons = {
+          Play: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>,
+          Square: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>,
+          Activity: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>,
+          Zap: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>,
+          Shield: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>,
+          AlertTriangle: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>,
+          CheckCircle: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>,
+          History: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v5h5"></path><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"></path><polyline points="12 7 12 12 15 15"></polyline></svg>,
+          X: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>,
+          Sidebar: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>,
+          ChevronDown: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>,
+          ChevronUp: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>,
+          Grid: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>,
+          List: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>,
+          Moon: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>,
+          Sun: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>,
+          Search: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>,
+          Clock: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>,
+          Filter: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>,
+          Phone: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>,
+          PhoneOff: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="23" y1="1" x2="1" y2="23"/></svg>,
+          MessageSquare: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>,
+          SortAsc: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5h10M11 9h7M11 13h4M3 7l3-3 3 3M6 6v14"/></svg>,
+          SortDesc: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5h10M11 9h7M11 13h4M3 17l3 3 3-3M6 18V4"/></svg>,
+          Coffee: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>,
+          Tag: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>,
+          Plus: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>,
+          Users: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>,
+          BarChart2: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>,
+          Building: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><path d="M9 22v-4h6v4"></path><path d="M8 6h.01"></path><path d="M16 6h.01"></path><path d="M12 6h.01"></path><path d="M12 10h.01"></path><path d="M12 14h.01"></path><path d="M16 10h.01"></path><path d="M16 14h.01"></path><path d="M8 10h.01"></path><path d="M8 14h.01"></path></svg>,
+          Copy: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>,
+          TrendingUp: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>,
+        };
+
+        const EMPLOYEES = [
+          'Специалист 1-й линии', 
+          'Старший диспетчер', 
+          'Руководитель смены', 
+          'Служба безопасности', 
+          'Техническая поддержка',
+          'Алексей С.',
+          'Мария К.',
+          'Игорь Н.',
+          'Елена В.'
+        ];
+
+        const formatDurationText = (ms) => {
+            const totalSecs = Math.floor(ms / 1000);
+            const m = Math.floor(totalSecs / 60);
+            const s = totalSecs % 60;
+            return `${m}м ${s}с`;
+        };
+
+        const formatDurationSecs = (secs) => {
+            const m = Math.floor(secs / 60).toString().padStart(2, '0');
+            const s = (secs % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        };
+
+        const formatShiftDuration = (ms) => {
+            const totalMins = Math.floor(ms / 1000 / 60);
+            const h = Math.floor(totalMins / 60);
+            const m = totalMins % 60;
+            if (h === 0 && m === 0) return '0ч 00м';
+            return `${h}ч ${m.toString().padStart(2, '0')}м`;
+        };
+
+        const groupLogsByDate = (logs) => {
+            const groups = [];
+            const dateMap = {};
+            
+            logs.forEach(log => {
+                const d = log.date || 'Неизвестная дата';
+                if (!dateMap[d]) {
+                    dateMap[d] = [];
+                    groups.push({ date: d, items: dateMap[d] });
+                }
+                dateMap[d].push(log);
+            });
+            
+            return groups;
+        };
+
+        const LiveShiftTimer = ({ loginTimestamp, totalBreakTimeMs, isBreak, currentBreakStart }) => {
+            const [elapsed, setElapsed] = useState(0);
+
+            useEffect(() => {
+                const updateTimer = () => {
+                    const now = Date.now();
+                    let breakMs = totalBreakTimeMs || 0;
+                    if (isBreak && currentBreakStart) {
+                        breakMs += (now - currentBreakStart);
+                    }
+                    const workMs = Math.max(0, (now - loginTimestamp) - breakMs);
+                    setElapsed(Math.floor(workMs / 1000));
+                };
+                
+                updateTimer();
+                const interval = setInterval(updateTimer, 1000);
+                return () => clearInterval(interval);
+            }, [loginTimestamp, totalBreakTimeMs, isBreak, currentBreakStart]);
+
+            const h = Math.floor(elapsed / 3600);
+            const m = Math.floor((elapsed % 3600) / 60).toString().padStart(2, '0');
+            const s = (elapsed % 60).toString().padStart(2, '0');
+            return <span>{h > 0 ? `${h}:${m}:${s}` : `${m}:${s}`}</span>;
+        };
+
+        const LiveBreakTimer = ({ totalBreakTimeMs, isBreak, currentBreakStart }) => {
+            const [elapsed, setElapsed] = useState(0);
+
+            useEffect(() => {
+                const updateTimer = () => {
+                    const now = Date.now();
+                    let breakMs = totalBreakTimeMs || 0;
+                    if (isBreak && currentBreakStart) {
+                        breakMs += (now - currentBreakStart);
+                    }
+                    setElapsed(Math.floor(breakMs / 1000));
+                };
+                
+                updateTimer();
+                const interval = setInterval(updateTimer, 1000);
+                return () => clearInterval(interval);
+            }, [totalBreakTimeMs, isBreak, currentBreakStart]);
+
+            const h = Math.floor(elapsed / 3600);
+            const m = Math.floor((elapsed % 3600) / 60).toString().padStart(2, '0');
+            const s = (elapsed % 60).toString().padStart(2, '0');
+            return <span>{h > 0 ? `${h}:${m}:${s}` : `${m}:${s}`}</span>;
+        };
+
+        const RequestTimer = ({ startTime, isEnded, finalDuration }) => {
+            const [elapsed, setElapsed] = useState(isEnded ? finalDuration : Math.floor((Date.now() - startTime) / 1000));
+
+            useEffect(() => {
+                if (isEnded) {
+                    setElapsed(finalDuration || 0);
+                    return;
+                }
+                setElapsed(Math.floor((Date.now() - startTime) / 1000));
+                const interval = setInterval(() => {
+                    setElapsed(Math.floor((Date.now() - startTime) / 1000));
+                }, 1000);
+                return () => clearInterval(interval);
+            }, [startTime, isEnded, finalDuration]);
+
+            const m = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const s = (elapsed % 60).toString().padStart(2, '0');
+            return <span className="font-mono tracking-widest">{m}:{s}</span>;
+        };
+
+        const BreakTimer = ({ startTime }) => {
+            const [elapsed, setElapsed] = useState(0);
+
+            useEffect(() => {
+                if (!startTime) return;
+                setElapsed(Math.floor((Date.now() - startTime) / 1000));
+                const interval = setInterval(() => {
+                    setElapsed(Math.floor((Date.now() - startTime) / 1000));
+                }, 1000);
+                return () => clearInterval(interval);
+            }, [startTime]);
+
+            const h = Math.floor(elapsed / 3600);
+            const m = Math.floor((elapsed % 3600) / 60).toString().padStart(2, '0');
+            const s = (elapsed % 60).toString().padStart(2, '0');
+
+            return (
+                <div className="text-5xl font-mono font-black text-amber-500 mb-4 tracking-tight drop-shadow-sm">
+                    {h > 0 ? `${h}:${m}:${s}` : `${m}:${s}`}
+                </div>
+            );
+        };
+
+        const CallTimer = ({ startTime }) => {
+            const [elapsed, setElapsed] = useState(0);
+
+            useEffect(() => {
+                const interval = setInterval(() => {
+                    setElapsed(Math.floor((Date.now() - startTime) / 1000));
+                }, 1000);
+                return () => clearInterval(interval);
+            }, [startTime]);
+
+            const m = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const s = (elapsed % 60).toString().padStart(2, '0');
+            return <span className="font-mono tracking-widest">{m}:{s}</span>;
+        };
+
+        const EmployeeCard = ({ employee }) => {
+           let rateColor = "bg-rose-50 text-rose-800 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:ring-rose-500/20"; // 20k
+           let iconBadge = "⚠️";
+           let barColor = "bg-rose-500 dark:bg-rose-400";
+           
+           if (employee.rate === 35000) { 
+               rateColor = "bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/20"; 
+               iconBadge = "🥇"; 
+               barColor = "bg-emerald-500 dark:bg-emerald-400"; 
+           }
+           if (employee.rate === 30000) { 
+               rateColor = "bg-blue-50 text-blue-800 ring-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:ring-blue-500/20"; 
+               iconBadge = "🥈"; 
+               barColor = "bg-blue-500 dark:bg-blue-400"; 
+           }
+           if (employee.rate === 25000) { 
+               rateColor = "bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:ring-amber-500/20"; 
+               iconBadge = "🥉"; 
+               barColor = "bg-amber-500 dark:bg-amber-400"; 
+           }
+
+           return (
+             <div className="group bg-white dark:bg-slate-900 rounded-2xl p-5 ring-1 ring-slate-200 dark:ring-slate-800 shadow-sm hover:shadow-soft hover:ring-slate-300 dark:hover:ring-slate-700 transition-all duration-300 flex flex-col h-full">
+               <div className="flex justify-between items-start mb-6">
+                  <div className="flex items-center gap-3.5">
+                     <div className="w-11 h-11 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-800/50 flex items-center justify-center text-slate-700 dark:text-slate-300 font-bold text-base ring-1 ring-slate-900/5 dark:ring-white/10 shadow-inner">
+                        {employee.name.charAt(0)}
+                     </div>
+                     <div>
+                        <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-sm tracking-tight">{employee.name}</h4>
+                        <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-0.5 block">Диспетчер</span>
+                     </div>
+                  </div>
+                  <div className={`px-2.5 py-1 rounded-full text-[11px] font-bold ring-1 whitespace-nowrap shadow-sm ${rateColor}`}>
+                     {iconBadge} {employee.rate.toLocaleString('ru-RU')} 
+                  </div>
+               </div>
+
+               <div className="grid grid-cols-2 gap-3 mb-5">
+                  <div className="bg-slate-50/50 dark:bg-slate-800/30 p-3 rounded-xl ring-1 ring-slate-100 dark:ring-slate-800/50 flex flex-col">
+                     <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 mb-1.5">
+                        <Icons.MessageSquare size={14} className="text-indigo-500"/>
+                        <span className="text-[10px] uppercase font-bold tracking-widest leading-none">Чаты</span>
+                     </div>
+                     <div className="text-lg font-bold text-slate-800 dark:text-slate-200 leading-none">{employee.metrics.messages}</div>
+                  </div>
+                  <div className="bg-slate-50/50 dark:bg-slate-800/30 p-3 rounded-xl ring-1 ring-slate-100 dark:ring-slate-800/50 flex flex-col">
+                     <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 mb-1.5">
+                        <Icons.Phone size={14} className="text-emerald-500"/>
+                        <span className="text-[10px] uppercase font-bold tracking-widest leading-none">Звонки</span>
+                     </div>
+                     <div className="text-lg font-bold text-slate-800 dark:text-slate-200 leading-none">{employee.metrics.calls}</div>
+                  </div>
+               </div>
+
+               <div className="space-y-4 mt-auto">
+                  <div>
+                     <div className="flex justify-between items-end mb-2">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-1"><Icons.Activity size={12} className="text-slate-400"/> Обходы</span>
+                        <span className={`text-xs font-bold ${employee.metrics.patrolPercent >= 85 ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>{employee.metrics.patrolPercent}%</span>
+                     </div>
+                     <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden ring-1 ring-inset ring-slate-900/5 dark:ring-white/5">
+                        <div className={`h-full rounded-full transition-all duration-1000 ease-out ${barColor}`} style={{ width: `${Math.min(employee.metrics.patrolPercent, 100)}%` }}></div>
+                     </div>
+                  </div>
+
+                  <div className="flex justify-between pt-4 border-t border-slate-100 dark:border-slate-800/50">
+                     <div className="flex flex-col gap-0.5">
+                        <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1">
+                            <Icons.Clock size={10}/> Опоздания
+                        </span>
+                        <span className={`text-xs font-bold ${employee.metrics.lateCount === 0 ? "text-slate-700 dark:text-slate-300" : "text-amber-600 dark:text-amber-400"}`}>{employee.metrics.lateCount}</span>
+                     </div>
+                     <div className="flex flex-col gap-0.5 items-end">
+                        <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1">
+                            <Icons.X size={10}/> Пропуски
+                        </span>
+                        <span className={`text-xs font-bold ${employee.metrics.absentCount === 0 ? "text-slate-700 dark:text-slate-300" : "text-rose-600 dark:text-rose-400"}`}>{employee.metrics.absentCount}</span>
+                     </div>
+                  </div>
+               </div>
+             </div>
+           );
+        };
+
+        const COMPANIES = [
+          { id: 'C-05', name: 'Coastal Transport LLC', fleetSize: 75 },
+          { id: 'C-06', name: 'VZ Transportation inc', fleetSize: 21 },
+          { id: 'C-07', name: 'Platinum Carriers LLC', fleetSize: 86 },
+          { id: 'C-08', name: 'Northernfreight LLC', fleetSize: 13 },
+          { id: 'C-09', name: 'Nagval transport INC', fleetSize: 4 },
+          { id: 'C-10', name: 'GRDL Logistic LLC', fleetSize: 2 },
+          { id: 'C-11', name: 'DK Express LLC', fleetSize: 6 },
+          { id: 'C-12', name: 'Navarros Trucking', fleetSize: 1 },
+          { id: 'C-13', name: 'D & M TRUCK SERVICES LLC', fleetSize: 1 },
+          { id: 'C-14', name: 'KEY TRANS LOGISTICS LLC', fleetSize: 1 },
+          { id: 'C-15', name: 'NBA General Corporation INC', fleetSize: 3 },
+          { id: 'C-16', name: 'BDS Lease LLC', fleetSize: 2 }
+        ];
+
+        const INITIAL_DRIVERS = [
+          { id: 'D-201', name: 'Quezada Rafael De Jesus JR', truck: 'Unit #CT-01', companyId: 'C-05', company: 'Coastal Transport LLC', requiresApproval: true, approvalNote: 'Не менять Duty статус без звонка' },
+          { id: 'D-202', name: 'Carlos Manuel', truck: 'Unit #CT-02', companyId: 'C-05', company: 'Coastal Transport LLC', requiresApproval: true, approvalNote: 'Требует объяснения каждого нарушения' },
+          { id: 'D-203', name: 'Vida Reed Ellis', truck: 'Unit #CT-03', companyId: 'C-05', company: 'Coastal Transport LLC', requiresApproval: true, approvalNote: '' },
+          { id: 'D-204', name: 'Aguasviva Angel Dario', truck: 'Unit #CT-04', companyId: 'C-05', company: 'Coastal Transport LLC', requiresApproval: true, approvalNote: 'Только текстовые сообщения' },
+          { id: 'D-205', name: 'Maksym Chernychka', truck: 'Unit #CT-05', companyId: 'C-05', company: 'Coastal Transport LLC', requiresApproval: true, approvalNote: '' },
+          ...[
+            'Miljenko Maricic', 'Santos Timoteo Escun Pixabaj', 'Benjamin Alex Odeychuk', 'Volodymyr Didiv', 'Ben Brown', 
+            'Erik Urinov', 'Farkhad Riziyev', 'Vladislav Kolb', 'Mohamad Al Obeid', 'Sergiu Tonu', 
+            'Vitaliy Shcherbyak', 'Mkrtych Levanovich Dostibegyan', 'Yuriy Kolb', 'Vitaliy Kolb', 'Valeriy Tylmach', 
+            'Gari Gevorkian', 'Petro Bogoi', 'Volodymyr Marunchak', 'Lawrence Nicoll', 'Gabriel Liubin', 
+            'Davyd Kozliuk', 'Felipe Burger', 'Nikolay Kovalev', 'Pavel Karabeinik', 'David Weinstein', 
+            'Denis Kalutsky', 'Dmitrii Bulgakov', 'Gene Steven Jr Kelly', 'Ilia Kalutsky', 'Inna Dyba', 
+            'Jevance Moore', 'Johnell Knight', 'Khojiakbar Yusupov', 'Mykhailo Basarab', 'Mykhailo Khodak', 
+            'Mykola Valchukovskyi', 'Oleksandr Koriukin', 'Oleksandr Volynskyi', 'Oleksandr Yashkin', 'Cleiton De La Cruz Martinez', 
+            'Olha Dykhtiar', 'Brandon Spicer', 'Petro Dykhtiar', 'Bradley Taylor', 'Sergiu Raducan', 
+            'Bohdan Burba', 'Serhii Dyba', 'Billy Bourciqiuot', 'Aziz Serikbaev', 'Serhii Hrydynskyi', 
+            'Anton Lubin', 'Taras Vaynovskiy', 'Vasyl Savyk', 'Andriy Bilyakov', 'Vasyl Torchylo', 
+            'Andrii Martyniuk', 'Viacheslav Russu', 'Andrii Lytvyniv', 'Andrii Kokhan', 'Viacheslav Shcherbinin', 
+            'Amir Laine', 'Vitaliy Onyshchuk', 'Alla Khrustalova', 'Alexander Kozin', 'Vladimir Gabyak', 
+            'Aleksandr Kolb', 'Aleksandre Kalutski', 'Volodymyr Stelmakh', 'Adel Aburqayyeq', 'Abdurrahim Cozart'
+          ].map((name, idx) => ({
+            id: `D-2${(idx + 6).toString().padStart(2, '0')}`,
+            name: name,
+            truck: `Unit #CT-${(idx + 6).toString().padStart(2, '0')}`,
+            companyId: 'C-05',
+            company: 'Coastal Transport LLC'
+          })),
+          ...[
+            'Adnan Rabie', 'Branden Smith', 'Croteau Peter John', 'Erick Minani', 'Francisco JR Rios', 
+            'Gabriel Akil Capers', 'Garen Kocharyan', 'Gayo Mazambi', 'Isai Martinez', 'Joginder Ram', 
+            'Kitson Robert J', 'Martini Brooke Martionii', 'Milan Mikel', 'Oleksii Istratov', 'Petro Zelenko', 
+            'Ricardo Morales', 'Rolando Gabriel Cedillo', 'Timko Miroslav', 'Vadym Zelenko', 'Waters Phytts', 
+            'William Earl JR Mitchell'
+          ].map((name, idx) => ({
+            id: `D-6${(idx + 1).toString().padStart(2, '0')}`,
+            name: name,
+            truck: `Unit #VZ-${(idx + 1).toString().padStart(2, '0')}`,
+            companyId: 'C-06',
+            company: 'VZ Transportation inc'
+          }))
+        ];
+
+        // --- ГЕНЕРАЦИЯ СОТРУДНИКОВ ---
+        const SHIFT_1_NAMES = ['Алексей С.', 'Мария К.', 'Джон Д.', 'Елена В.', 'Сара О.', 'Майкл Т.', 'Анна П.', 'Дэвид Р.']; // 8
+        const SHIFT_2_NAMES = ['Игорь Н.', 'Виктория С.', 'Кевин Б.', 'Алиса М.', 'Тимур Х.', 'Ольга Л.', 'Джеймс У.', 'София Т.', 'Артем Г.', 'Хлоя Э.']; // 10
+        const SHIFT_3_NAMES = ['Руслан Д.', 'Эмма Ш.', 'Даниель К.', 'Наталья Ф.', 'Роберт Б.', 'Алина Ж.', 'Уильям С.', 'Карина Ч.', 'Томас В.', 'Джулия Н.', 'Максим З.', 'Оливия М.']; // 12
+
+        const calculateRate = (patrol, requests, late, absent) => {
+           if (patrol >= 95 && requests >= 45 && late <= 1 && absent === 0) return 35000;
+           if (patrol >= 85 && requests >= 30 && late <= 3 && absent <= 1) return 30000;
+           if (patrol >= 70 && requests >= 20 && late <= 5 && absent <= 2) return 25000;
+           return 20000;
+        };
+
+        const generateEmployeeData = (names, shiftName, baseMsgs, baseCalls) => {
+            return names.map((name, idx) => {
+                const isTop = Math.random() > 0.8;
+                const isBad = Math.random() > 0.8 && !isTop;
+
+                let messages = Math.max(0, baseMsgs + Math.floor((Math.random() - 0.5) * 10));
+                let calls = Math.max(0, baseCalls + Math.floor((Math.random() - 0.5) * 4));
+                let patrol = Math.floor(Math.random() * 20) + 70; // 70-90%
+
+                if (isTop) {
+                    messages += 15;
+                    calls += 5;
+                    patrol = Math.floor(Math.random() * 5) + 95; // 95-100%
+                } else if (isBad) {
+                    messages -= 10;
+                    calls -= 3;
+                    patrol = Math.floor(Math.random() * 20) + 50; // 50-70%
+                }
+
+                const requests = messages + calls;
+                const late = isTop ? 0 : isBad ? Math.floor(Math.random() * 5) + 3 : Math.floor(Math.random() * 3);
+                const absent = isTop ? 0 : isBad ? Math.floor(Math.random() * 3) + 1 : 0;
+                
+                const rate = calculateRate(patrol, requests, late, absent);
+
+                return {
+                    id: `${shiftName}-E${idx}`,
+                    name,
+                    shift: shiftName,
+                    metrics: {
+                        messages: messages,
+                        calls: calls,
+                        totalReqs: requests,
+                        patrolPercent: patrol,
+                        lateCount: late,
+                        absentCount: absent
+                    },
+                    rate
+                };
+            });
+        };
+
+        const MOCK_EMPLOYEES = [
+            ...generateEmployeeData(SHIFT_1_NAMES, '1-я смена', 25, 5),   
+            ...generateEmployeeData(SHIFT_2_NAMES, '2-я смена', 35, 10),  
+            ...generateEmployeeData(SHIFT_3_NAMES, '3-я смена', 35, 10),  
+        ];
+
+        const QUICK_ACTIONS = ['Открыли Shift', 'Cycle сделали Break', 'Поправили логбук', 'Добавили БОЛ', 'Сделали рестарт ELD', 'Изменили статус Duty'];
+        const PATROL_DRIVER_ACTIONS = ['Fixed Violation', 'Added BOL', 'New Shift', 'New Cycle', 'Fixed', 'Added Time', 'Checked'];
+
+        function MotionELD() {
+          const [isDarkMode, setIsDarkMode] = useState(true); // По умолчанию темная тема, как просили
+          const [systemTime, setSystemTime] = useState(new Date());
+          
+          const [shiftState, setShiftState] = useState('Offline');
+          const [currentShift, setCurrentShift] = useState(null);
+          
+          const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
+          const [rightSidebarOpen, setRightSidebarOpen] = useState(false); 
+          const [activeTab, setActiveTab] = useState('employees'); // Для демонстрации сразу откроем Сотрудников
+          
+          const [assignedCompanyIds, setAssignedCompanyIds] = useState(['C-05']); 
+          const [patrolProgress, setPatrolProgress] = useState({});
+
+          const [activeWorkspaceView, setActiveWorkspaceView] = useState('idle'); 
+          const [activeRequests, setActiveRequests] = useState([]); 
+          const [currentRequestId, setCurrentRequestId] = useState(null);
+          const [activePatrol, setActivePatrol] = useState(null);
+          
+          const [selectedDriverId, setSelectedDriverId] = useState('');
+          const [driverSearch, setDriverSearch] = useState('');
+          const [companySearch, setCompanySearch] = useState('');
+          
+          const [driversList, setDriversList] = useState(INITIAL_DRIVERS);
+          const [patrolData, setPatrolData] = useState({}); 
+          
+          const [patrolDriverSearch, setPatrolDriverSearch] = useState('');
+          const [patrolSortOrder, setPatrolSortOrder] = useState('asc'); 
+          const [expandedPatrols, setExpandedPatrols] = useState({});
+          const [patrolViewMode, setPatrolViewMode] = useState('grid');
+          const [patrolCurrentPage, setPatrolCurrentPage] = useState(1);
+          const [itemsPerPage, setItemsPerPage] = useState('25'); 
+          const [checkedSectionOpen, setCheckedSectionOpen] = useState(true);
+          const [inactiveSectionOpen, setInactiveSectionOpen] = useState(false);
+          const [lastSelectedIndex, setLastSelectedIndex] = useState(null);
+
+          const [filterSensitive, setFilterSensitive] = useState(false);
+          const [copiedDriver, setCopiedDriver] = useState(null);
+          
+          const [employeeSort, setEmployeeSort] = useState('default');
+          const [activeShiftTab, setActiveShiftTab] = useState('1-я смена'); // Для новых табов
+
+          const [isPatrolHistoryOpen, setIsPatrolHistoryOpen] = useState(true);
+          const [isRequestsHistoryOpen, setIsRequestsHistoryOpen] = useState(true);
+          
+          const [collapsedHistoryDates, setCollapsedHistoryDates] = useState({});
+          const [collapsedRequestsDates, setCollapsedRequestsDates] = useState({});
+
+          const [antiFraudAlertMsg, setAntiFraudAlertMsg] = useState(''); 
+          const [showAntiFraudAlert, setShowAntiFraudAlert] = useState(false);
+          
+          const [showEscalateModal, setShowEscalateModal] = useState(false);
+          const [showNewRequestModal, setShowNewRequestModal] = useState(false);
+          const [showApprovalNoteModal, setShowApprovalNoteModal] = useState(false);
+          const [approvalNoteInput, setApprovalNoteInput] = useState('');
+
+          const todayDateStr = new Date().toLocaleDateString('ru-RU', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+          const yesterdayDate = new Date(Date.now() - 86400000);
+          const yesterdayDateStr = yesterdayDate.toLocaleDateString('ru-RU', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+
+          const [attendanceLogs, setAttendanceLogs] = useState([
+            { id: 'ATT-001', date: 'сб, 09 мая 2026 г.', loginTime: '08:58', loginTimestamp: new Date('2026-05-09T08:58:00').getTime(), logoutTime: '17:05', logoutTimestamp: new Date('2026-05-09T17:05:00').getTime(), totalHours: '7ч 07м', breakTime: '1ч 00м', shift: '1-я смена (09:00 - 17:00)', status: 'Завершен' }
+          ]);
+
+          const [historyLog, setHistoryLog] = useState([
+            { id: 'REQ-0892', driverName: 'Carlos Manuel', companyName: 'Coastal Transport LLC', actions: ['Изменили статус Duty', 'Завершили звонок (03:15)'], status: 'Эскалация -> Майкл Т.', time: '16:15', date: yesterdayDateStr, timeSpent: '4м 12с', type: 'call' }
+          ]);
+
+          const [patrolHistoryLog, setPatrolHistoryLog] = useState([
+            {
+              id: 'PAT-0101', companyName: 'Coastal Transport LLC', time: '10:00', date: yesterdayDateStr, timeSpent: '12м 45с', rawTimeMs: 765000, completedAt: Date.now() - 86400000,
+              actions: [
+                { driverName: 'Quezada Rafael De Jesus JR', fixes: ['Checked', 'Fixed Violation'] },
+                { driverName: 'Ben Brown', fixes: ['Checked'] }
+              ],
+              stats: { checked: 2, total: 75, percent: 3, inactive: 0 }
+            }
+          ]);
+
+          useEffect(() => {
+            const timer = setInterval(() => setSystemTime(new Date()), 1000);
+            return () => clearInterval(timer);
+          }, []);
+
+          const toggleTheme = () => setIsDarkMode(!isDarkMode);
+
+          const toggleHistoryDate = (date) => setCollapsedHistoryDates(prev => ({ ...prev, [date]: !prev[date] }));
+          const toggleRequestsDate = (date) => setCollapsedRequestsDates(prev => ({ ...prev, [date]: !prev[date] }));
+
+          const handleCopyName = (e, name) => {
+              e.stopPropagation();
+              const el = document.createElement('textarea');
+              el.value = name;
+              document.body.appendChild(el);
+              el.select();
+              document.execCommand('copy');
+              document.body.removeChild(el);
+              setCopiedDriver(name);
+              setTimeout(() => setCopiedDriver(null), 1500);
+          };
+
+          const handleSwitchWorkspace = (view, reqId = null) => {
+             setActiveWorkspaceView(view);
+             if (reqId) setCurrentRequestId(reqId);
+             setShowAntiFraudAlert(false);
+          };
+
+          const handleStartShift = () => {
+            const hour = systemTime.getHours();
+            const day = systemTime.getDay(); 
+            let detectedShift = '';
+            
+            if (day === 0) { 
+                if (hour >= 9 && hour < 21) detectedShift = 'Воскресенье, 1-я смена (09:00 - 21:00)';
+                else detectedShift = 'Воскресенье, 2-я смена (21:00 - 09:00)';
+            } else { 
+                if (hour >= 9 && hour < 17) detectedShift = '1-я смена (09:00 - 17:00)';
+                else if (hour >= 17 || hour < 1) detectedShift = '2-я смена (17:00 - 01:00)';
+                else detectedShift = '3-я смена (01:00 - 09:00)';
+            }
+            
+            const dateStr = systemTime.toLocaleDateString('ru-RU', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+
+            setCurrentShift(detectedShift);
+            setShiftState('Active');
+            setActiveTab('workspace');
+            handleSwitchWorkspace('idle');
+            setPatrolProgress({}); 
+
+            setAttendanceLogs(prev => [{
+              id: `ATT-${Date.now()}`,
+              date: dateStr,
+              loginTime: systemTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+              loginTimestamp: systemTime.getTime(),
+              logoutTime: '--:--',
+              totalHours: '--:--',
+              breakTime: '0ч 00м',
+              totalBreakTimeMs: 0,
+              currentBreakStart: null,
+              shift: detectedShift,
+              status: 'Активен'
+            }, ...prev]);
+          };
+
+          const handleToggleBreak = () => {
+            const now = Date.now();
+            if (shiftState === 'Active') {
+              setShiftState('Break');
+              if (activePatrol && activePatrol.startTime) {
+                setActivePatrol(prev => ({ ...prev, accumulatedTime: (prev.accumulatedTime || 0) + (now - prev.startTime), startTime: null }));
+              }
+              setAttendanceLogs(prev => {
+                  const logs = [...prev];
+                  if (logs.length > 0 && logs[0].status === 'Активен') logs[0] = { ...logs[0], currentBreakStart: now };
+                  return logs;
+              });
+            } else {
+              setShiftState('Active');
+              if (activePatrol) {
+                setActivePatrol(prev => ({ ...prev, startTime: now }));
+              }
+              setAttendanceLogs(prev => {
+                  const logs = [...prev];
+                  if (logs.length > 0 && logs[0].status === 'Активен' && logs[0].currentBreakStart) {
+                      const breakDuration = now - logs[0].currentBreakStart;
+                      logs[0] = { ...logs[0], totalBreakTimeMs: (logs[0].totalBreakTimeMs || 0) + breakDuration, currentBreakStart: null };
+                  }
+                  return logs;
+              });
+            }
+          };
+
+          const handleEndShift = () => {
+            setAttendanceLogs(prev => {
+                const logs = [...prev];
+                if (logs.length > 0 && logs[0].status === 'Активен') {
+                    const outTime = new Date();
+                    const nowMs = outTime.getTime();
+                    let finalBreakMs = logs[0].totalBreakTimeMs || 0;
+                    if (shiftState === 'Break' && logs[0].currentBreakStart) {
+                        finalBreakMs += (nowMs - logs[0].currentBreakStart);
+                    }
+                    const grossMs = nowMs - logs[0].loginTimestamp;
+                    const netMs = Math.max(0, grossMs - finalBreakMs);
+                    logs[0] = {
+                        ...logs[0],
+                        logoutTime: outTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                        totalHours: formatShiftDuration(netMs),
+                        breakTime: formatShiftDuration(finalBreakMs),
+                        status: 'Завершен',
+                        currentBreakStart: null
+                    };
+                }
+                return logs;
+            });
+            setShiftState('Offline');
+            setCurrentShift(null);
+            setActiveRequests([]);
+            setCurrentRequestId(null);
+            setActivePatrol(null);
+            setActiveWorkspaceView('idle');
+            setPatrolData({});
+          };
+
+          const handleToggleAssignment = (companyId) => {
+            setAssignedCompanyIds(prev => prev.includes(companyId) ? prev.filter(id => id !== companyId) : [...prev, companyId]);
+          };
+
+          const handleStartRequest = (type = 'call') => {
+            if (!selectedDriverId) return;
+            setShowAntiFraudAlert(false);
+            const driver = driversList.find(d => d.id === selectedDriverId);
+            const newReq = {
+              id: `REQ-${Math.floor(Math.random() * 9000) + 1000}`,
+              driver: driver,
+              startTime: Date.now(),
+              actions: [],
+              type: type,
+              callStatus: type === 'call' ? 'ongoing' : null,
+              callStartTime: type === 'call' ? Date.now() : null,
+              callDurationSecs: 0
+            };
+            setActiveRequests(prev => [...prev, newReq]);
+            setCurrentRequestId(newReq.id);
+            setActiveWorkspaceView('request');
+            setSelectedDriverId('');
+            setDriverSearch('');
+            setShowNewRequestModal(false);
+          };
+
+          const handleAddAction = (actionText) => {
+            setActiveRequests(prev => prev.map(req => {
+               if (req.id === currentRequestId) return { ...req, actions: req.actions.includes(actionText) ? req.actions : [...req.actions, actionText] };
+               return req;
+            }));
+          };
+
+          const handleRemoveAction = (actionText) => {
+            setActiveRequests(prev => prev.map(req => {
+               if (req.id === currentRequestId) return { ...req, actions: req.actions.filter(a => a !== actionText) };
+               return req;
+            }));
+          };
+
+          const handleStopCall = (reqId) => {
+              const endTime = Date.now();
+              setActiveRequests(prev => prev.map(req => {
+                  if (req.id === reqId && req.callStatus === 'ongoing') {
+                      const durationSecs = Math.floor((endTime - req.callStartTime) / 1000);
+                      const m = Math.floor(durationSecs / 60).toString().padStart(2, '0');
+                      const s = (durationSecs % 60).toString().padStart(2, '0');
+                      const actionString = `Завершили звонок (${m}:${s})`;
+                      return { ...req, callStatus: 'ended', callDurationSecs: durationSecs, actions: [...req.actions, actionString] };
+                  }
+                  return req;
+              }));
+          };
+
+          const handleEndRequest = () => {
+            const currentReq = activeRequests.find(r => r.id === currentRequestId);
+            if (currentReq.type === 'call' && currentReq.callStatus === 'ongoing') {
+                setAntiFraudAlertMsg('Пожалуйста, остановите таймер и завершите звонок перед закрытием обращения.');
+                setShowAntiFraudAlert(true);
+                return;
+            }
+            if (!currentReq || currentReq.actions.length === 0) {
+              setAntiFraudAlertMsg('Действия не зафиксированы. Выберите минимум одно действие из реестра.');
+              setShowAntiFraudAlert(true);
+              return;
+            }
+            const durationMs = Date.now() - currentReq.startTime;
+            const timeSpentText = formatDurationText(durationMs);
+            const dateStr = new Date().toLocaleDateString('ru-RU', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+            setHistoryLog(prev => [{
+              id: currentReq.id, driverName: currentReq.driver.name, companyName: currentReq.driver.company,
+              actions: [...currentReq.actions], status: 'Решен',
+              time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+              date: dateStr, timeSpent: timeSpentText, type: currentReq.type
+            }, ...prev]);
+            closeCurrentRequest();
+          };
+
+          const handleCancelRequest = () => closeCurrentRequest();
+
+          const handleEscalate = (empName) => {
+            const currentReq = activeRequests.find(r => r.id === currentRequestId);
+            if (currentReq.type === 'call' && currentReq.callStatus === 'ongoing') {
+                setAntiFraudAlertMsg('Пожалуйста, остановите таймер и завершите звонок перед эскалацией обращения.');
+                setShowAntiFraudAlert(true);
+                return;
+            }
+            const durationMs = Date.now() - currentReq.startTime;
+            const timeSpentText = formatDurationText(durationMs);
+            const dateStr = new Date().toLocaleDateString('ru-RU', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+            setHistoryLog(prev => [{
+              id: currentReq.id, driverName: currentReq.driver.name, companyName: currentReq.driver.company,
+              actions: currentReq.actions.length > 0 ? [...currentReq.actions] : ['Без действий'],
+              status: `Эскалация -> ${empName}`, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+              date: dateStr, timeSpent: timeSpentText, type: currentReq.type
+            }, ...prev]);
+            setShowEscalateModal(false);
+            closeCurrentRequest();
+          };
+
+          const closeCurrentRequest = () => {
+            const newRequests = activeRequests.filter(r => r.id !== currentRequestId);
+            setActiveRequests(newRequests);
+            setShowAntiFraudAlert(false);
+            if (newRequests.length > 0) {
+                setCurrentRequestId(newRequests[0].id);
+                setActiveWorkspaceView('request');
+            } else {
+                setCurrentRequestId(null);
+                setActiveWorkspaceView(activePatrol ? 'patrol' : 'idle');
+            }
+          };
+
+          const startPatrolDirectly = (compId, isRepeat = false) => {
+            setShowAntiFraudAlert(false);
+            const company = COMPANIES.find(c => c.id === compId);
+            let currentProg = patrolProgress[compId] || { rounds: 0, data: {} };
+            if (isRepeat) {
+                currentProg = { rounds: currentProg.rounds + 1, data: {} };
+                setPatrolProgress(prev => ({ ...prev, [compId]: currentProg }));
+            }
+            setActivePatrol({ 
+                id: `PAT-${Math.floor(Math.random() * 9000) + 1000}`, 
+                company: company, startTime: Date.now(), accumulatedTime: 0, initialData: currentProg.data 
+            });
+            setPatrolData(currentProg.data); setPatrolCurrentPage(1); setLastSelectedIndex(null); 
+            setPatrolDriverSearch(''); setFilterSensitive(false);
+            setActiveWorkspaceView('patrol'); setActiveTab('workspace'); 
+          };
+
+          const handleToggleDriverSelect = (driverId, index, event, currentDrivers) => {
+            setPatrolData(prev => {
+              const isSelected = prev[driverId]?.selected || false;
+              const newState = { ...prev };
+              if (event.shiftKey && lastSelectedIndex !== null && currentDrivers) {
+                const start = Math.min(lastSelectedIndex, index);
+                const end = Math.max(lastSelectedIndex, index);
+                for (let i = start; i <= end; i++) {
+                  const id = currentDrivers[i].id;
+                  if (!newState[id]) newState[id] = { selected: true, completed: false, fixes: [] };
+                  else newState[id].selected = true;
+                }
+              } else {
+                if (isSelected) newState[driverId] = { ...newState[driverId], selected: false };
+                else {
+                  if (!newState[driverId]) newState[driverId] = { selected: true, completed: false, fixes: [] };
+                  else newState[driverId].selected = true;
+                }
+              }
+              return newState;
+            });
+            setLastSelectedIndex(index);
+          };
+
+          const handleSelectAllDrivers = () => {
+            if (!activePatrol) return;
+            const companyDrivers = driversList.filter(d => d.companyId === activePatrol.company.id);
+            const uncompleted = companyDrivers.filter(d => !patrolData[d.id]?.completed && !patrolData[d.id]?.inactive);
+            
+            const searchedUncompleted = uncompleted.filter(d => 
+                (d.name.toLowerCase().includes(patrolDriverSearch.toLowerCase()) || 
+                d.truck.toLowerCase().includes(patrolDriverSearch.toLowerCase())) &&
+                (!filterSensitive || d.requiresApproval)
+            );
+
+            let currentPageDrivers = searchedUncompleted;
+            if (itemsPerPage !== 'All') {
+                const limit = parseInt(itemsPerPage, 10);
+                const startIndex = (patrolCurrentPage - 1) * limit;
+                currentPageDrivers = searchedUncompleted.slice(startIndex, startIndex + limit);
+            }
+            
+            const allSelected = currentPageDrivers.length > 0 && currentPageDrivers.every(d => patrolData[d.id]?.selected);
+            const newData = { ...patrolData };
+            currentPageDrivers.forEach(d => {
+                if (!newData[d.id]) newData[d.id] = { selected: !allSelected, completed: false, fixes: [] };
+                else newData[d.id].selected = !allSelected; 
+            });
+            setPatrolData(newData); setLastSelectedIndex(null);
+          };
+
+          const handleToggleBulkFix = (fixText) => {
+            const companyDrivers = driversList.filter(d => d.companyId === activePatrol.company.id);
+            const selectedIds = companyDrivers.filter(d => patrolData[d.id]?.selected && !patrolData[d.id]?.completed && !patrolData[d.id]?.inactive).map(d => d.id);
+            if (selectedIds.length === 0) return;
+            setPatrolData(prev => {
+                const newState = { ...prev };
+                const allHaveFix = selectedIds.every(id => newState[id].fixes.includes(fixText));
+                selectedIds.forEach(id => {
+                    if (allHaveFix) newState[id].fixes = newState[id].fixes.filter(f => f !== fixText);
+                    else if (!newState[id].fixes.includes(fixText)) newState[id].fixes = [...newState[id].fixes, fixText];
+                });
+                return newState;
+            });
+          };
+
+          const handleMoveToCompleted = () => {
+              setPatrolData(prev => {
+                  const newState = { ...prev };
+                  Object.keys(newState).forEach(id => {
+                      if (newState[id].selected && !newState[id].completed && !newState[id].inactive) {
+                          newState[id].completed = true; newState[id].selected = false;
+                          if (newState[id].fixes.length === 0) newState[id].fixes = ['Checked'];
+                      }
+                  });
+                  return newState;
+              });
+              setLastSelectedIndex(null);
+          };
+
+          const handleMarkInactive = () => {
+              setPatrolData(prev => {
+                  const newState = { ...prev };
+                  Object.keys(newState).forEach(id => {
+                      if (newState[id].selected && !newState[id].completed && !newState[id].inactive) {
+                          newState[id].inactive = true; newState[id].selected = false; newState[id].fixes = []; 
+                      }
+                  });
+                  return newState;
+              });
+              setLastSelectedIndex(null);
+          };
+
+          const handleEndPatrol = () => {
+            const companyDrivers = driversList.filter(d => d.companyId === activePatrol.company.id);
+            const totalDriversCount = companyDrivers.length;
+            const newlyCompletedData = Object.entries(patrolData)
+              .filter(([id, data]) => data.completed && !activePatrol.initialData[id]?.completed)
+              .map(([id, data]) => ({ driverName: driversList.find(d => d.id === id)?.name || id, fixes: [...data.fixes] }));
+
+            const newlyInactiveData = Object.entries(patrolData)
+              .filter(([id, data]) => data.inactive && !activePatrol.initialData[id]?.inactive)
+              .map(([id, data]) => ({ driverName: driversList.find(d => d.id === id)?.name || id, fixes: ['В отгуле / Не работает'] }));
+
+            const allProcessed = [...newlyCompletedData, ...newlyInactiveData];
+            const finalTimeMs = (activePatrol.accumulatedTime || 0) + (activePatrol.startTime ? (Date.now() - activePatrol.startTime) : 0);
+
+            if (allProcessed.length === 0 && finalTimeMs < 5000) { 
+                setAntiFraudAlertMsg('Действия не зафиксированы. Проверьте хотя бы одного водителя.');
+                setShowAntiFraudAlert(true); 
+                return; 
+            }
+
+            setPatrolProgress(prev => {
+                const existing = prev[activePatrol.company.id] || { rounds: 0, data: {} };
+                return { ...prev, [activePatrol.company.id]: { ...existing, data: patrolData } };
+            });
+
+            const totalCheckedNow = Object.values(patrolData).filter(d => d.completed || d.inactive).length;
+            const percentage = totalDriversCount > 0 ? Math.round((totalCheckedNow / totalDriversCount) * 100) : 100;
+            const dateStr = new Date().toLocaleDateString('ru-RU', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+
+            if (allProcessed.length > 0 || finalTimeMs > 30000) {
+                setPatrolHistoryLog(prev => [{
+                  id: activePatrol.id, companyName: activePatrol.company.name, actions: allProcessed,
+                  time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                  date: dateStr, timeSpent: formatDurationText(finalTimeMs), rawTimeMs: finalTimeMs,
+                  completedAt: Date.now(), stats: { checked: totalCheckedNow, total: totalDriversCount, percent: percentage, inactive: newlyInactiveData.length }
+                }, ...prev]);
+            }
+
+            const patrolFixesLogs = newlyCompletedData
+              .filter(data => !(data.fixes.length === 1 && data.fixes[0] === 'Checked'))
+              .map((data) => ({
+                id: `PAT-FIX-${Math.floor(Math.random() * 90000)}`, driverName: data.driverName, companyName: activePatrol.company.name,
+                actions: data.fixes, status: 'Проверен', time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                date: dateStr, timeSpent: formatDurationText(finalTimeMs / (newlyCompletedData.length || 1)), type: 'patrol_fix'
+              }));
+
+            if (patrolFixesLogs.length > 0) setHistoryLog(prev => [...patrolFixesLogs, ...prev]);
+            
+            setActivePatrol(null); setPatrolData({}); setPatrolDriverSearch('');
+            setActiveWorkspaceView(activeRequests.length > 0 ? 'request' : 'idle');
+          };
+
+          const togglePatrolHistory = (id) => setExpandedPatrols(prev => ({ ...prev, [id]: !prev[id] }));
+
+          const handleToggleApprovalStatus = () => {
+              if (!activePatrol) return;
+              const companyDrivers = driversList.filter(d => d.companyId === activePatrol.company.id);
+              const selectedDrivers = companyDrivers.filter(d => patrolData[d.id]?.selected && !patrolData[d.id]?.completed && !patrolData[d.id]?.inactive);
+              if (selectedDrivers.length === 0) return;
+              const allRequireApproval = selectedDrivers.every(d => d.requiresApproval);
+              
+              if (!allRequireApproval) {
+                  setApprovalNoteInput(''); setShowApprovalNoteModal(true);
+              } else {
+                  setDriversList(prev => prev.map(d => {
+                      if (selectedDrivers.some(sd => sd.id === d.id)) return { ...d, requiresApproval: false, approvalNote: '' };
+                      return d;
+                  }));
+              }
+          };
+
+          const handleConfirmApprovalNote = () => {
+              const companyDrivers = driversList.filter(d => d.companyId === activePatrol.company.id);
+              const selectedDrivers = companyDrivers.filter(d => patrolData[d.id]?.selected && !patrolData[d.id]?.completed && !patrolData[d.id]?.inactive);
+              setDriversList(prev => prev.map(d => {
+                  if (selectedDrivers.some(sd => sd.id === d.id)) return { ...d, requiresApproval: true, approvalNote: approvalNoteInput };
+                  return d;
+              }));
+              setShowApprovalNoteModal(false); setApprovalNoteInput('');
+          };
+
+          const HistoryCard = ({ log }) => (
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl ring-1 ring-slate-200 dark:ring-slate-800 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-3">
+               <div className="flex justify-between items-start">
+                  <div className="font-semibold text-sm text-slate-900 dark:text-slate-100 leading-tight">{log.driverName}</div>
+                  <span className="text-[10px] text-slate-400 font-mono shrink-0 bg-slate-50 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-100 dark:border-slate-700/50 ml-2">{log.time}</span>
+               </div>
+               {log.companyName && (
+                  <div className="text-[10px] font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1.5 -mt-1.5">
+                     <Icons.Building size={12} className="text-slate-400" /> <span className="truncate">{log.companyName}</span>
+                  </div>
+               )}
+               {log.timeSpent && (
+                  <div className="text-[10px] font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2.5 py-1.5 rounded-lg self-start flex items-center gap-1.5 mt-1">
+                     <Icons.Clock size={12} /> Затрачено: {log.timeSpent}
+                  </div>
+               )}
+               <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  {log.actions.map((act, i) => (
+                     <span key={i} className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-medium ring-1 ring-slate-200/50 dark:ring-slate-700/50">{act}</span>
+                  ))}
+               </div>
+               <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/50">
+                  <span className="font-mono text-[9px] text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-100 dark:border-slate-700">{log.id}</span>
+                  <span className={`px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider shadow-sm ring-1 ${
+                    log.status.includes('Эскалация') ? 'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:ring-amber-500/20' : 
+                    'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/20'
+                  }`}>
+                     {log.status.split('->')[0]}
+                  </span>
+               </div>
+            </div>
+          );
+
+          const filteredDrivers = driversList.filter(d => d.name.toLowerCase().includes(driverSearch.toLowerCase()) || d.truck.toLowerCase().includes(driverSearch.toLowerCase()));
+          const filteredCompanies = COMPANIES.filter(c => c.name.toLowerCase().includes(companySearch.toLowerCase()));
+          const myCompanies = filteredCompanies.filter(c => assignedCompanyIds.includes(c.id));
+          const currentReq = activeRequests.find(r => r.id === currentRequestId);
+
+          const activeShiftLog = attendanceLogs.find(l => l.status === 'Активен');
+          const targetDateStr = activeShiftLog ? activeShiftLog.date : todayDateStr;
+
+          const currentShiftPatrols = activeShiftLog 
+             ? patrolHistoryLog.filter(log => log.completedAt >= activeShiftLog.loginTimestamp)
+             : patrolHistoryLog.filter(log => log.date === targetDateStr);
+
+          const currentShiftRequests = historyLog.filter(log => log.date === targetDateStr);
+
+          let totalBasePercent = 0; let totalBonusPercent = 0;
+          myCompanies.forEach(company => {
+              const prog = patrolProgress[company.id];
+              if (prog) {
+                  const companyDriversCount = driversList.filter(d => d.companyId === company.id).length;
+                  const checkedCount = Object.values(prog.data).filter(d => d.completed || d.inactive).length;
+                  const currentPercent = companyDriversCount > 0 ? Math.round((checkedCount / companyDriversCount) * 100) : 0;
+                  if (prog.rounds > 0) {
+                      totalBasePercent += 100; totalBonusPercent += (prog.rounds - 1) * 100 + currentPercent;
+                  } else {
+                      totalBasePercent += currentPercent;
+                  }
+              }
+          });
+
+          const myCompaniesCount = myCompanies.length || 1;
+          const basePatrolPercent = Math.round(totalBasePercent / myCompaniesCount);
+          const bonusPatrolPercent = Math.round(totalBonusPercent / myCompaniesCount);
+
+          const totalPatrolTimeMs = currentShiftPatrols.reduce((acc, log) => acc + (log.rawTimeMs || 0), 0);
+          const messagesCount = currentShiftRequests.filter(l => l.type === 'message').length;
+          const callsCount = currentShiftRequests.filter(l => l.type === 'call').length;
+          const fixesCount = currentShiftRequests.filter(l => l.type === 'patrol_fix').length;
+          const totalRequestsCount = historyLog.length;
+          const requestsByDate = groupLogsByDate(historyLog);
+
+          const getSortedEmployees = (shiftName) => {
+              const shiftEmployees = MOCK_EMPLOYEES.filter(e => e.shift === shiftName);
+              if (employeeSort === 'default') return shiftEmployees;
+              return [...shiftEmployees].sort((a, b) => {
+                  if (employeeSort === 'best') {
+                      if (b.rate !== a.rate) return b.rate - a.rate;
+                      if (b.metrics.patrolPercent !== a.metrics.patrolPercent) return b.metrics.patrolPercent - a.metrics.patrolPercent;
+                      return b.metrics.totalReqs - a.metrics.totalReqs;
+                  } else {
+                      if (a.rate !== b.rate) return a.rate - b.rate;
+                      if (a.metrics.patrolPercent !== b.metrics.patrolPercent) return a.metrics.patrolPercent - b.metrics.patrolPercent;
+                      return a.metrics.totalReqs - b.metrics.totalReqs;
+                  }
+              });
+          };
+
+          return (
+            <div className={`${isDarkMode ? 'dark' : ''} h-full`}>
+              <div className="min-h-screen flex font-sans h-screen overflow-hidden text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-950 transition-colors duration-500">
+                
+                {/* ЛЕВАЯ ПАНЕЛЬ (SIDEBAR) */}
+                <div className={`${leftSidebarOpen ? 'w-[260px]' : 'w-0'} bg-white dark:bg-slate-900 border-r border-slate-200/60 dark:border-slate-800/60 flex flex-col shrink-0 transition-all duration-300 overflow-hidden z-30 relative`}>
+                  <div className="w-[260px] h-full flex flex-col relative">
+                    <div className="p-6 pb-4 flex items-center gap-3.5 shrink-0">
+                      <div className="bg-blue-600 p-2.5 rounded-xl text-white shadow-[0_4px_14px_rgba(37,99,235,0.4)]">
+                        <Icons.Activity size={20} />
+                      </div>
+                      <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white">Motion ELD</span>
+                    </div>
+                    
+                    <div className="px-4 py-2 space-y-1.5 shrink-0 mt-2 overflow-y-auto custom-scrollbar flex-1">
+                      <div className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest px-3 mb-4 mt-2">Меню</div>
+                      
+                      {[
+                        { id: 'workspace', icon: <Icons.Square size={18} />, label: 'Рабочее место' },
+                        { id: 'history', icon: <Icons.History size={18} />, label: 'История' },
+                        { id: 'attendance', icon: <Icons.Clock size={18} />, label: 'Журнал прихода' },
+                        { id: 'companies', icon: <Icons.Building size={18} />, label: 'Компании' },
+                        { id: 'employees', icon: <Icons.Users size={18} />, label: 'Сотрудники' },
+                      ].map(item => (
+                         <button 
+                            key={item.id}
+                            onClick={() => setActiveTab(item.id)} 
+                            className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                              activeTab === item.id 
+                                ? 'bg-blue-50 text-blue-700 dark:bg-blue-600/10 dark:text-blue-400 shadow-sm ring-1 ring-inset ring-blue-500/20' 
+                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200'
+                            }`}
+                         >
+                           {item.icon} {item.label}
+                         </button>
+                      ))}
+                    </div>
+
+                    <div className="mt-auto shrink-0 flex flex-col p-4">
+                      <div className="p-5 rounded-2xl ring-1 ring-inset ring-slate-200 dark:ring-slate-800 bg-slate-50/50 dark:bg-slate-800/20 shadow-sm relative overflow-hidden">
+                          {/* Акцентный фон для смены */}
+                          {shiftState === 'Active' && <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500"></div>}
+                          {shiftState === 'Break' && <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500"></div>}
+                          {shiftState === 'Offline' && <div className="absolute top-0 left-0 right-0 h-1 bg-slate-300 dark:bg-slate-700"></div>}
+
+                          <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Статус терминала</div>
+                          
+                          {shiftState === 'Offline' ? (
+                            <div className="text-sm font-medium text-slate-500 dark:text-slate-400 p-3 bg-white dark:bg-slate-900 rounded-xl ring-1 ring-slate-200 dark:ring-slate-800 text-center shadow-sm">Офлайн</div>
+                          ) : shiftState === 'Break' ? (
+                            <div className="flex items-center gap-3 bg-white dark:bg-slate-900 p-3 rounded-xl ring-1 ring-amber-200 dark:ring-amber-500/30 shadow-sm">
+                                <span className="relative flex h-2.5 w-2.5 shrink-0"><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span></span>
+                                <div className="min-w-0">
+                                  <div className="text-amber-600 dark:text-amber-500 font-bold text-[11px] uppercase tracking-wider">Перерыв</div>
+                                  <div className="text-slate-500 dark:text-slate-400 text-[10px] mt-0.5 truncate">Приостановлено</div>
+                                </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-3 bg-white dark:bg-slate-900 p-3 rounded-xl ring-1 ring-emerald-200 dark:ring-emerald-500/30 shadow-sm">
+                                <span className="relative flex h-2.5 w-2.5 shrink-0"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-50"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span></span>
+                                <div className="min-w-0">
+                                  <div className="text-emerald-600 dark:text-emerald-500 font-bold text-[11px] uppercase tracking-wider">На смене</div>
+                                  <div className="text-slate-500 dark:text-slate-400 text-[10px] mt-0.5 truncate" title={currentShift}>{currentShift}</div>
+                                </div>
+                            </div>
+                          )}
+                          
+                          {/* ЖИВЫЕ ТАЙМЕРЫ */}
+                          {shiftState !== 'Offline' && attendanceLogs.length > 0 && attendanceLogs[0].status === 'Активен' && (
+                              <div className="mt-4 space-y-2">
+                                 <div className="flex justify-between items-center text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                     <span className="flex items-center gap-1.5"><Icons.Play size={12} className="text-blue-500"/> В работе</span>
+                                     <span className="font-mono font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg ring-1 ring-slate-200 dark:ring-slate-800 shadow-sm">
+                                        <LiveShiftTimer loginTimestamp={attendanceLogs[0].loginTimestamp} totalBreakTimeMs={attendanceLogs[0].totalBreakTimeMs} isBreak={shiftState === 'Break'} currentBreakStart={attendanceLogs[0].currentBreakStart} />
+                                     </span>
+                                 </div>
+                                 <div className="flex justify-between items-center text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                     <span className="flex items-center gap-1.5"><Icons.Coffee size={12} className="text-amber-500"/> Отдых</span>
+                                     <span className="font-mono font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2.5 py-1 rounded-lg ring-1 ring-amber-200/50 dark:ring-amber-500/20 shadow-sm">
+                                        <LiveBreakTimer totalBreakTimeMs={attendanceLogs[0].totalBreakTimeMs} isBreak={shiftState === 'Break'} currentBreakStart={attendanceLogs[0].currentBreakStart} />
+                                     </span>
+                                 </div>
+                              </div>
+                          )}
+                      </div>
+                      
+                      <div className="mt-4 p-3 rounded-2xl flex items-center gap-3 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 ring-1 ring-slate-200 dark:ring-slate-800 transition-colors cursor-pointer shadow-sm">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 text-blue-700 dark:text-blue-300 flex items-center justify-center font-bold text-sm shrink-0 ring-1 ring-white/50 dark:ring-white/10 shadow-inner">ТС</div>
+                          <div className="truncate">
+                              <div className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">Сотрудник Д.</div>
+                              <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest truncate mt-0.5">Диспетчер 1-й линии</div>
+                          </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ОСНОВНОЙ КОНТЕЙНЕР (ЦЕНТР) */}
+                <div className="flex-1 flex flex-col relative overflow-hidden bg-slate-50/50 dark:bg-slate-950">
+                  
+                  {/* ВЕРХНЯЯ ПАНЕЛЬ (HEADER) */}
+                  <header className="h-16 bg-white/70 dark:bg-slate-950/70 border-b border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between px-6 shrink-0 z-20 backdrop-blur-xl transition-all">
+                    <div className="flex items-center gap-4">
+                      <button onClick={() => setLeftSidebarOpen(!leftSidebarOpen)} className="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all active:scale-95"><Icons.Sidebar size={20} /></button>
+                      <h1 className="text-sm font-semibold text-slate-800 dark:text-slate-200 tracking-tight">
+                        {activeTab === 'workspace' ? 'Рабочее пространство' : 
+                         activeTab === 'history' ? 'История обращений' : 
+                         activeTab === 'companies' ? 'Компании и автопарки' : 
+                         activeTab === 'employees' ? 'Отчеты сотрудников' : 'Журнал прихода'}
+                      </h1>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      {activeTab === 'workspace' && (
+                        <button 
+                          onClick={() => setRightSidebarOpen(!rightSidebarOpen)} 
+                          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all shadow-sm text-xs font-semibold tracking-wide active:scale-95 ${rightSidebarOpen ? 'bg-blue-50 ring-1 ring-blue-200 text-blue-700 dark:bg-blue-500/10 dark:ring-blue-500/30 dark:text-blue-400' : 'bg-white ring-1 ring-slate-200 text-slate-700 hover:bg-slate-50 dark:bg-slate-900 dark:ring-slate-800 dark:text-slate-300 dark:hover:bg-slate-800'}`}
+                        >
+                          <Icons.BarChart2 size={16} /> Сводка
+                        </button>
+                      )}
+                      <button onClick={toggleTheme} className="p-2.5 rounded-xl text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 dark:hover:text-blue-400 transition-all active:scale-95 ring-1 ring-slate-200 dark:ring-slate-800 bg-white dark:bg-slate-900 shadow-sm" title="Переключить тему">
+                        {isDarkMode ? <Icons.Sun size={18} /> : <Icons.Moon size={18} />}
+                      </button>
+                      <div className="font-mono text-xs text-slate-700 dark:text-slate-300 font-bold bg-white dark:bg-slate-900 px-4 py-2.5 rounded-xl ring-1 ring-slate-200 dark:ring-slate-800 shadow-sm flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        {systemTime.toLocaleTimeString('ru-RU')}
+                      </div>
+                    </div>
+                  </header>
+
+                  <div className="flex-1 flex overflow-hidden relative">
+                    <main className="flex-1 overflow-y-auto p-6 lg:p-10 pb-32 block relative custom-scrollbar">
+                      
+                      {shiftState === 'Offline' && activeTab === 'workspace' && (
+                        <div className="max-w-md w-full mx-auto bg-white dark:bg-slate-900 p-10 rounded-3xl ring-1 ring-slate-200 dark:ring-slate-800 shadow-xl shadow-slate-200/20 dark:shadow-black/40 text-center mt-12 transition-all">
+                          <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 ring-1 ring-slate-100 dark:ring-slate-700 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner rotate-3 transform transition-transform hover:rotate-0">
+                            <Icons.Shield size={32} className="text-slate-400 dark:text-slate-500" />
+                          </div>
+                          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-3 tracking-tight">Терминал заблокирован</h2>
+                          <p className="text-slate-500 dark:text-slate-400 mb-8 text-sm leading-relaxed">Начните смену, чтобы приступить к обработке обращений водителей и плановым обходам автопарка.</p>
+                          <button onClick={handleStartShift} className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-sm uppercase tracking-widest transition-all shadow-glow active:scale-[0.98]">
+                            Начать смену
+                          </button>
+                        </div>
+                      )}
+
+                      {shiftState === 'Break' && activeTab === 'workspace' && (
+                        <div className="max-w-md w-full mx-auto bg-white dark:bg-slate-900 p-10 rounded-3xl ring-1 ring-amber-200 dark:ring-amber-500/20 shadow-xl shadow-amber-500/5 text-center mt-12 relative overflow-hidden transition-all">
+                          <div className="absolute top-0 left-0 right-0 h-1.5 bg-amber-500"></div>
+                          <div className="w-20 h-20 bg-amber-50 dark:bg-amber-500/10 ring-1 ring-amber-100 dark:ring-amber-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner -rotate-3 transform transition-transform hover:rotate-0">
+                            <Icons.Coffee size={32} className="text-amber-500" />
+                          </div>
+                          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4 tracking-tight">Вы на перерыве</h2>
+                          
+                          {attendanceLogs.length > 0 && attendanceLogs[0].currentBreakStart && (
+                              <BreakTimer startTime={attendanceLogs[0].currentBreakStart} />
+                          )}
+                          
+                          <p className="text-slate-500 dark:text-slate-400 mb-8 text-sm leading-relaxed">Входящие запросы и обходы временно приостановлены. Время перерыва не учитывается в рабочее время.</p>
+                          <button onClick={handleToggleBreak} className="w-full py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-bold text-sm uppercase tracking-widest transition-all shadow-lg shadow-amber-500/20 active:scale-[0.98]">
+                            Вернуться к работе
+                          </button>
+                        </div>
+                      )}
+
+                      {activeTab === 'companies' && (
+                        <div className="w-full max-w-6xl mx-auto mt-2">
+                           <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                             <div>
+                               <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Управление автопарками</h2>
+                               <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Закрепите за собой нужные компании для проведения обходов.</p>
+                             </div>
+                             <div className="relative">
+                                <Icons.Search className="absolute left-3.5 top-3 text-slate-400" size={16} />
+                                <input 
+                                  placeholder="Поиск компании..." 
+                                  value={companySearch} 
+                                  onChange={(e) => setCompanySearch(e.target.value)} 
+                                  className="pl-10 pr-4 py-2.5 w-full md:w-64 bg-white dark:bg-slate-900 ring-1 ring-slate-200 dark:ring-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-slate-200 shadow-sm transition-all" 
+                                />
+                             </div>
+                           </div>
+                           
+                           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                              {filteredCompanies.map(company => {
+                                 const isAssigned = assignedCompanyIds.includes(company.id);
+                                 return (
+                                   <div key={company.id} className={`group bg-white dark:bg-slate-900 p-6 rounded-3xl transition-all duration-300 flex flex-col hover:shadow-soft ${isAssigned ? 'ring-2 ring-blue-500/20 shadow-sm' : 'ring-1 ring-slate-200 dark:ring-slate-800 shadow-sm hover:ring-slate-300 dark:hover:ring-slate-700'}`}>
+                                     <div className="flex justify-between items-start mb-5">
+                                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-xl shadow-sm ${isAssigned ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white' : 'bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-800/50 text-slate-600 dark:text-slate-300 ring-1 ring-slate-900/5 dark:ring-white/10'}`}>
+                                          {company.name.charAt(0)}
+                                        </div>
+                                        <span className={`text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-widest ring-1 shadow-sm transition-colors ${isAssigned ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 ring-blue-200 dark:ring-blue-500/20' : 'bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 ring-slate-200 dark:ring-slate-700'}`}>
+                                          {isAssigned ? 'Назначена' : 'Не назначена'}
+                                        </span>
+                                     </div>
+                                     <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 truncate tracking-tight" title={company.name}>{company.name}</h3>
+                                     <p className="text-sm text-slate-500 dark:text-slate-400 mb-8 flex items-center gap-2 font-medium">
+                                        <Icons.Users size={16} className="text-slate-400 dark:text-slate-500"/> {company.fleetSize} водителей (траков)
+                                     </p>
+                                     <button 
+                                       onClick={() => handleToggleAssignment(company.id)}
+                                       className={`mt-auto w-full py-3.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 active:scale-[0.98] ${
+                                          isAssigned 
+                                          ? 'bg-rose-50 text-rose-600 ring-1 ring-rose-200 hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:ring-rose-500/20 dark:hover:bg-rose-500/20' 
+                                          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 ring-1 ring-slate-200 dark:ring-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 hover:ring-slate-300 dark:hover:ring-slate-600 shadow-sm'
+                                       }`}
+                                     >
+                                       {isAssigned ? <><Icons.X size={16} /> Открепить</> : <><Icons.Plus size={16} /> Взять в работу</>}
+                                     </button>
+                                   </div>
+                                 )
+                              })}
+                              {filteredCompanies.length === 0 && (
+                                  <div className="col-span-full py-16 text-center flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 rounded-3xl ring-1 ring-slate-200 dark:ring-slate-800 shadow-sm">
+                                     <Icons.Search size={32} className="text-slate-300 dark:text-slate-600 mb-3" />
+                                     <p>Ничего не найдено по запросу "{companySearch}"</p>
+                                  </div>
+                              )}
+                           </div>
+                        </div>
+                      )}
+
+                      {/* ВКЛАДКА: СОТРУДНИКИ */}
+                      {activeTab === 'employees' && (
+                        <div className="w-full max-w-7xl mx-auto mt-2 pb-10">
+                           <div className="mb-8 flex flex-col xl:flex-row justify-between xl:items-end gap-6">
+                             <div>
+                               <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
+                                  <div className="p-2 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-lg"><Icons.TrendingUp size={24} /></div>
+                                  Сотрудники и Отчеты
+                               </h2>
+                               <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-2xl leading-relaxed">
+                                 Показатели работы (в среднем за день). Часовая ставка рассчитывается автоматически на основе активности, качества обходов и дисциплины.
+                               </p>
+                               
+                               <div className="flex flex-wrap gap-2.5 mt-5">
+                                  <div className="bg-emerald-50 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-400 ring-1 ring-emerald-200 dark:ring-emerald-500/20 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest shadow-sm">
+                                    🥇 35K UZS/ч (Топ)
+                                  </div>
+                                  <div className="bg-blue-50 text-blue-800 dark:bg-blue-500/10 dark:text-blue-400 ring-1 ring-blue-200 dark:ring-blue-500/20 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest shadow-sm">
+                                    🥈 30K UZS/ч (Норма)
+                                  </div>
+                                  <div className="bg-amber-50 text-amber-800 dark:bg-amber-500/10 dark:text-amber-400 ring-1 ring-amber-200 dark:ring-amber-500/20 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest shadow-sm">
+                                    🥉 25K UZS/ч (База)
+                                  </div>
+                                  <div className="bg-rose-50 text-rose-800 dark:bg-rose-500/10 dark:text-rose-400 ring-1 ring-rose-200 dark:ring-rose-500/20 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest shadow-sm">
+                                    ⚠️ 20K UZS/ч (Штраф)
+                                  </div>
+                               </div>
+                             </div>
+
+                             {/* Фильтр сотрудников */}
+                             <div className="flex items-center bg-white dark:bg-slate-900 px-4 py-2.5 rounded-xl ring-1 ring-slate-200 dark:ring-slate-800 shadow-sm shrink-0">
+                                <Icons.Filter size={14} className="text-slate-400 mr-2" />
+                                <select 
+                                    value={employeeSort} 
+                                    onChange={(e) => setEmployeeSort(e.target.value)}
+                                    className="text-xs font-semibold text-slate-700 dark:text-slate-300 bg-transparent border-none focus:outline-none cursor-pointer outline-none w-48"
+                                >
+                                    <option value="default">Сортировка: По умолчанию</option>
+                                    <option value="best">Сортировка: Сначала лучшие</option>
+                                    <option value="worst">Сортировка: Сначала отстающие</option>
+                                </select>
+                             </div>
+                           </div>
+
+                           <div className="flex flex-col gap-6">
+                             {/* Табы смен */}
+                             <div className="flex overflow-x-auto hide-scrollbar pb-2 -mx-2 px-2">
+                               <div className="flex p-1.5 bg-slate-200/50 dark:bg-slate-800/50 rounded-xl self-start ring-1 ring-slate-900/5 dark:ring-white/5">
+                                 {['1-я смена', '2-я смена', '3-я смена'].map(shift => {
+                                   const shiftCount = MOCK_EMPLOYEES.filter(e => e.shift === shift).length;
+                                   const isActive = activeShiftTab === shift;
+                                   return (
+                                     <button
+                                       key={shift}
+                                       onClick={() => setActiveShiftTab(shift)}
+                                       className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 ${
+                                         isActive 
+                                           ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
+                                           : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                       }`}
+                                     >
+                                       {shift === '1-я смена' ? <Icons.Sun size={16} className={isActive ? "text-amber-500" : "text-slate-400"} /> : 
+                                        shift === '2-я смена' ? <Icons.Moon size={16} className={isActive ? "text-indigo-500" : "text-slate-400"} /> : 
+                                        <Icons.Clock size={16} className={isActive ? "text-blue-500" : "text-slate-400"} />}
+                                       {shift}
+                                       <span className={`ml-1.5 px-2 py-0.5 rounded text-[10px] font-bold ${
+                                         isActive 
+                                           ? 'bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300' 
+                                           : 'bg-transparent text-slate-400'
+                                       }`}>
+                                         {shiftCount}
+                                       </span>
+                                     </button>
+                                   );
+                                 })}
+                               </div>
+                             </div>
+
+                             {/* Сетка карточек для активной смены */}
+                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 animate-in fade-in duration-500">
+                               {getSortedEmployees(activeShiftTab).map(emp => (
+                                  <EmployeeCard key={emp.id} employee={emp} />
+                               ))}
+                             </div>
+                           </div>
+                        </div>
+                      )}
+
+                      {activeTab === 'attendance' && (
+                        <div className="w-full max-w-6xl mx-auto mt-2 bg-white dark:bg-slate-900 rounded-3xl ring-1 ring-slate-200 dark:ring-slate-800 shadow-sm overflow-hidden transition-all">
+                            <div className="bg-slate-50/80 dark:bg-slate-800/30 p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                              <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-widest flex items-center gap-2"><Icons.Clock size={18} className="text-slate-400"/> Журнал прихода и ухода</h2>
+                            </div>
+                            <div className="overflow-auto custom-scrollbar max-h-[750px]">
+                              <table className="w-full text-left border-collapse">
+                                <thead className="bg-white dark:bg-slate-900 sticky top-0 z-10 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+                                  <tr>
+                                    <th className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest border-b border-slate-200 dark:border-slate-800">Дата</th>
+                                    <th className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest border-b border-slate-200 dark:border-slate-800">Смена</th>
+                                    <th className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest border-b border-slate-200 dark:border-slate-800">Время входа</th>
+                                    <th className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest border-b border-slate-200 dark:border-slate-800">Время выхода</th>
+                                    <th className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest border-b border-slate-200 dark:border-slate-800">Перерыв</th>
+                                    <th className="px-6 py-4 text-[10px] font-bold text-slate-900 dark:text-white uppercase tracking-widest bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">Отработано</th>
+                                    <th className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest border-b border-slate-200 dark:border-slate-800">Статус</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                                  {attendanceLogs.map((log) => (
+                                    <tr key={log.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group">
+                                      <td className="px-6 py-4 text-sm font-semibold text-slate-800 dark:text-slate-200 capitalize">{log.date}</td>
+                                      <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{log.shift}</td>
+                                      <td className="px-6 py-4 text-sm font-mono text-slate-600 dark:text-slate-400">{log.loginTime}</td>
+                                      <td className="px-6 py-4 text-sm font-mono text-slate-600 dark:text-slate-400">{log.logoutTime}</td>
+                                      <td className="px-6 py-4 text-sm font-mono text-slate-600 dark:text-slate-400">{log.breakTime}</td>
+                                      <td className="px-6 py-4 text-sm font-bold text-slate-900 dark:text-white bg-slate-50/30 dark:bg-slate-800/20 group-hover:bg-transparent">{log.totalHours}</td>
+                                      <td className="px-6 py-4">
+                                          <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ring-1 shadow-sm inline-block ${log.status === 'Активен' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-emerald-200 dark:ring-emerald-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 ring-slate-200 dark:ring-slate-700'}`}>
+                                              {log.status}
+                                          </span>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                        </div>
+                      )}
+
+                      {activeTab === 'history' && (
+                        <div className="w-full max-w-6xl mx-auto mt-2 flex flex-col gap-8 items-start">
+                          <div className="w-full bg-white dark:bg-slate-900 rounded-3xl ring-1 ring-slate-200 dark:ring-slate-800 shadow-sm flex flex-col overflow-hidden transition-all">
+                            <div 
+                              className="bg-slate-50/80 dark:bg-slate-800/30 p-6 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center cursor-pointer hover:bg-slate-100/80 dark:hover:bg-slate-800/50 transition-colors gap-4"
+                              onClick={() => setIsPatrolHistoryOpen(!isPatrolHistoryOpen)}
+                            >
+                              <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
+                                 <div className="p-1.5 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-lg"><Icons.Activity size={16} /></div>
+                                 Обходы автопарка
+                              </h2>
+                              <div className="flex items-center gap-3">
+                                 <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-950 px-3 py-2 rounded-lg ring-1 ring-slate-200 dark:ring-slate-800 shadow-sm flex items-center gap-1.5">
+                                    Прогресс: <span className="text-blue-600 dark:text-blue-400 text-xs">
+                                       {basePatrolPercent}% {bonusPatrolPercent > 0 && <span className="text-emerald-500">(+{bonusPatrolPercent}%)</span>}
+                                    </span>
+                                 </span>
+                                 <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-950 px-3 py-2 rounded-lg ring-1 ring-slate-200 dark:ring-slate-800 shadow-sm flex items-center gap-1.5">
+                                    <Icons.Clock size={12}/> {formatDurationText(totalPatrolTimeMs)}
+                                 </span>
+                                 <div className="p-1 bg-white dark:bg-slate-800 rounded-lg ring-1 ring-slate-200 dark:ring-slate-700 ml-2">
+                                   {isPatrolHistoryOpen ? <Icons.ChevronUp size={18} className="text-slate-500"/> : <Icons.ChevronDown size={18} className="text-slate-500"/>}
+                                 </div>
+                              </div>
+                            </div>
+                            
+                            {isPatrolHistoryOpen && (
+                              <div className="overflow-auto custom-scrollbar max-h-[600px] p-0">
+                                <table className="w-full text-left border-collapse">
+                                  <thead className="bg-white dark:bg-slate-900 sticky top-0 z-10 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+                                    <tr>
+                                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest border-b border-slate-200 dark:border-slate-800 w-32">Время / ID</th>
+                                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest border-b border-slate-200 dark:border-slate-800 w-64">Компания</th>
+                                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest border-b border-slate-200 dark:border-slate-800">Детализация проверок</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                                    {groupLogsByDate(patrolHistoryLog).map(group => (
+                                       <React.Fragment key={group.date}>
+                                         <tr 
+                                            className="bg-slate-50/50 dark:bg-slate-800/20 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/40 transition-colors"
+                                            onClick={() => toggleHistoryDate(`patrol-${group.date}`)}
+                                         >
+                                            <td colSpan="3" className="p-0">
+                                              <div className="px-6 py-3 flex justify-between items-center text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest border-y border-slate-200 dark:border-slate-800">
+                                                 <span>{group.date}</span>
+                                                 {collapsedHistoryDates[`patrol-${group.date}`] ? <Icons.ChevronDown size={14}/> : <Icons.ChevronUp size={14}/>}
+                                              </div>
+                                            </td>
+                                         </tr>
+                                         {!collapsedHistoryDates[`patrol-${group.date}`] && group.items.map((log, idx) => (
+                                            <tr key={`pat-${log.id}-${idx}`} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                              <td className="px-6 py-5 align-top">
+                                                <div className="text-sm text-slate-900 dark:text-slate-100 font-bold">{log.time}</div>
+                                                <div className="font-mono text-[10px] text-slate-400 dark:text-slate-500 mt-1">{log.id}</div>
+                                              </td>
+                                              <td className="px-6 py-5 align-top">
+                                                 <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">{log.companyName}</div>
+                                                 {log.timeSpent && (
+                                                   <div className="mt-2 flex items-center gap-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                                                      <Icons.Clock size={12} className="text-slate-400"/> Затрачено: {log.timeSpent}
+                                                   </div>
+                                                 )}
+                                              </td>
+                                              <td className="px-6 py-5 align-top">
+                                                <div className="flex items-center justify-between bg-white dark:bg-slate-950 p-4 rounded-xl ring-1 ring-slate-200 dark:ring-slate-800 cursor-pointer hover:ring-slate-300 dark:hover:ring-slate-700 transition-all shadow-sm" onClick={() => togglePatrolHistory(log.id)}>
+                                                  <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                                    Готово: {log.stats.checked} / {log.stats.total} 
+                                                    <span className="text-slate-600 dark:text-slate-300 ml-2 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md">{log.stats.percent}%</span>
+                                                    {log.stats.inactive > 0 && <span className="ml-1 text-slate-400 dark:text-slate-500 font-medium">[{log.stats.inactive} отгул]</span>}
+                                                  </span>
+                                                  {expandedPatrols[log.id] ? <Icons.ChevronUp size={16} className="text-slate-400"/> : <Icons.ChevronDown size={16} className="text-slate-400"/>}
+                                                </div>
+                                                {expandedPatrols[log.id] && (
+                                                  <div className="flex flex-col gap-2 mt-3 pl-2 border-l-2 border-slate-200 dark:border-slate-800">
+                                                    {log.actions.map((act, i) => (
+                                                      <div key={i} className={`text-xs p-3 rounded-xl ring-1 shadow-sm ${act.fixes.includes('В отгуле / Не работает') ? 'ring-slate-200 dark:ring-slate-800 opacity-60 bg-slate-50 dark:bg-slate-900/50' : 'ring-slate-200 dark:ring-slate-800 bg-white dark:bg-slate-950'}`}>
+                                                        <span className="font-bold text-slate-900 dark:text-slate-100 block mb-2 text-[11px]">{act.driverName}</span>
+                                                        <div className="flex flex-wrap gap-1.5">
+                                                           {act.fixes.map((f, j) => <span key={j} className="text-[10px] font-semibold px-2 py-1 rounded border bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800">{f}</span>)}
+                                                        </div>
+                                                      </div>
+                                                    ))}
+                                                  </div>
+                                                )}
+                                              </td>
+                                            </tr>
+                                         ))}
+                                       </React.Fragment>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="w-full bg-white dark:bg-slate-900 rounded-3xl ring-1 ring-slate-200 dark:ring-slate-800 shadow-sm flex flex-col overflow-hidden transition-all pb-4">
+                            <div 
+                              className="bg-slate-50/80 dark:bg-slate-800/30 p-6 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center cursor-pointer hover:bg-slate-100/80 dark:hover:bg-slate-800/50 transition-colors gap-4"
+                              onClick={() => setIsRequestsHistoryOpen(!isRequestsHistoryOpen)}
+                            >
+                              <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
+                                 <div className="p-1.5 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-lg"><Icons.CheckCircle size={16} /></div>
+                                 Обработанные обращения
+                              </h2>
+                              <div className="flex items-center gap-3">
+                                 <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-4 py-2 rounded-lg ring-1 ring-emerald-200 dark:ring-emerald-500/20 shadow-sm flex items-center gap-1.5 uppercase tracking-widest">
+                                    Всего обработано: <span className="text-sm">{totalRequestsCount}</span>
+                                 </span>
+                                 <div className="p-1 bg-white dark:bg-slate-800 rounded-lg ring-1 ring-slate-200 dark:ring-slate-700 ml-2">
+                                   {isRequestsHistoryOpen ? <Icons.ChevronUp size={18} className="text-slate-500"/> : <Icons.ChevronDown size={18} className="text-slate-500"/>}
+                                 </div>
+                              </div>
+                            </div>
+                            
+                            {isRequestsHistoryOpen && (
+                              <div className="p-6 bg-transparent">
+                                <div className="flex flex-col gap-8">
+                                   {requestsByDate.map(group => {
+                                      const isCollapsed = collapsedRequestsDates[group.date];
+                                      return (
+                                        <div key={group.date} className="flex flex-col bg-white dark:bg-slate-950 rounded-2xl ring-1 ring-slate-200 dark:ring-slate-800 shadow-sm overflow-hidden">
+                                          <div
+                                            className="bg-slate-50/50 dark:bg-slate-900/50 px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                            onClick={() => toggleRequestsDate(group.date)}
+                                          >
+                                            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest flex items-center gap-2">
+                                              <Icons.Clock size={16} className="text-slate-400" />
+                                              {group.date}
+                                              <span className="text-[10px] bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 ring-1 ring-emerald-200 dark:ring-emerald-500/20 px-2 py-0.5 rounded-md ml-3 shadow-sm">
+                                                {group.items.length} записей
+                                              </span>
+                                            </h3>
+                                            {isCollapsed ? <Icons.ChevronDown size={18} className="text-slate-400"/> : <Icons.ChevronUp size={18} className="text-slate-400"/>}
+                                          </div>
+
+                                          {!isCollapsed && (
+                                            <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                               <div className="flex flex-col gap-4">
+                                                  <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest border-b border-slate-200 dark:border-slate-800 pb-3 flex items-center gap-2">
+                                                     <div className="p-1 bg-indigo-50 text-indigo-500 dark:bg-indigo-500/20 rounded"><Icons.MessageSquare size={14} /></div> Сообщения
+                                                  </h4>
+                                                  <div className="flex flex-col gap-3">
+                                                     {group.items.filter(log => log.type === 'message').map(log => <HistoryCard key={log.id} log={log} />)}
+                                                     {group.items.filter(log => log.type === 'message').length === 0 && <span className="text-xs text-slate-400 italic">Нет записей</span>}
+                                                  </div>
+                                               </div>
+                                               <div className="flex flex-col gap-4">
+                                                  <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest border-b border-slate-200 dark:border-slate-800 pb-3 flex items-center gap-2">
+                                                     <div className="p-1 bg-blue-50 text-blue-500 dark:bg-blue-500/20 rounded"><Icons.Shield size={14} /></div> Правки
+                                                  </h4>
+                                                  <div className="flex flex-col gap-3">
+                                                     {group.items.filter(log => log.type === 'patrol_fix').map(log => <HistoryCard key={log.id} log={log} />)}
+                                                     {group.items.filter(log => log.type === 'patrol_fix').length === 0 && <span className="text-xs text-slate-400 italic">Нет записей</span>}
+                                                  </div>
+                                               </div>
+                                               <div className="flex flex-col gap-4">
+                                                  <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest border-b border-slate-200 dark:border-slate-800 pb-3 flex items-center gap-2">
+                                                     <div className="p-1 bg-emerald-50 text-emerald-500 dark:bg-emerald-500/20 rounded"><Icons.Phone size={14} /></div> Звонки
+                                                  </h4>
+                                                  <div className="flex flex-col gap-3">
+                                                     {group.items.filter(log => log.type === 'call').map(log => <HistoryCard key={log.id} log={log} />)}
+                                                     {group.items.filter(log => log.type === 'call').length === 0 && <span className="text-xs text-slate-400 italic">Нет записей</span>}
+                                                  </div>
+                                               </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                   })}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {shiftState === 'Active' && activeTab === 'workspace' && (
+                        <>
+                          {(activePatrol || activeRequests.length > 0) && (
+                            <div className="w-full max-w-7xl mx-auto flex flex-col md:flex-row md:items-start justify-between gap-4 mb-8">
+                              <div className="flex flex-wrap gap-3">
+                                {activePatrol && (
+                                   <button onClick={() => handleSwitchWorkspace('patrol')} className={`px-5 py-3 rounded-2xl font-bold text-xs uppercase tracking-widest flex items-center gap-2.5 transition-all active:scale-95 ${activeWorkspaceView === 'patrol' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 ring-1 ring-slate-200 dark:ring-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm'}`}>
+                                      <Icons.Activity size={16} className={activeWorkspaceView === 'patrol' ? 'text-white' : 'text-blue-500'}/> Обход: {activePatrol.company.name}
+                                   </button>
+                                )}
+                                {activeRequests.map(req => (
+                                   <button key={req.id} onClick={() => handleSwitchWorkspace('request', req.id)} className={`px-5 py-3 rounded-2xl font-bold text-xs uppercase tracking-widest flex items-center gap-3 transition-all active:scale-95 ${activeWorkspaceView === 'request' && currentRequestId === req.id ? (req.type === 'message' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20' : 'bg-emerald-600 text-white shadow-md shadow-emerald-500/20') : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 ring-1 ring-slate-200 dark:ring-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm'}`}>
+                                      {req.type === 'message' ? <Icons.MessageSquare size={18} className={activeWorkspaceView === 'request' && currentRequestId === req.id ? 'text-indigo-200' : 'text-indigo-500'}/> : <Icons.Phone size={18} className={activeWorkspaceView === 'request' && currentRequestId === req.id ? 'text-emerald-200' : 'text-emerald-500'}/>}
+                                      <div className="flex flex-col items-start leading-tight">
+                                         <span>{req.driver.name.split(' ')[0]}</span>
+                                         <span className="text-[10px] font-mono opacity-80 mt-1 flex items-center gap-1 normal-case tracking-normal">
+                                             {new Date(req.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                             <span className="opacity-50 mx-0.5">•</span>
+                                             <RequestTimer startTime={req.startTime} isEnded={false} />
+                                         </span>
+                                      </div>
+                                      {req.actions.length > 0 && <Icons.CheckCircle size={14} className={`${activeWorkspaceView === 'request' && currentRequestId === req.id ? 'text-white' : 'text-emerald-500'} ml-2 shrink-0`} />}
+                                   </button>
+                                ))}
+                              </div>
+                              <div className="flex shrink-0">
+                                 <button onClick={handleToggleBreak} className="px-6 py-3 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/20 text-amber-700 dark:text-amber-500 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all shadow-sm ring-1 ring-amber-200/50 dark:ring-amber-500/20 flex items-center gap-2.5 active:scale-95">
+                                   <Icons.Coffee size={16} /> На перерыв
+                                 </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {activeWorkspaceView === 'idle' && (
+                            <div className="w-full max-w-6xl mx-auto mt-4">
+                              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                                <div>
+                                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Панель управления</h2>
+                                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Выберите автопарк для проведения планового обхода</p>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-3">
+                                  <div className="relative">
+                                     <Icons.Search className="absolute left-3.5 top-3 text-slate-400" size={16} />
+                                     <input 
+                                       placeholder="Поиск компании..." 
+                                       value={companySearch} 
+                                       onChange={(e) => setCompanySearch(e.target.value)} 
+                                       className="pl-10 pr-4 py-2.5 w-48 lg:w-64 bg-white dark:bg-slate-900 ring-1 ring-slate-200 dark:ring-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-slate-200 shadow-sm transition-all" 
+                                     />
+                                  </div>
+                                  <button onClick={handleEndShift} className="bg-slate-800 hover:bg-slate-900 text-white dark:bg-slate-700 dark:hover:bg-slate-600 px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-colors shadow-sm active:scale-95">
+                                    Завершить смену
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                {myCompanies.map(company => {
+                                   const companyPatrols = currentShiftPatrols.filter(p => p.companyName === company.name);
+                                   const patrolCount = companyPatrols.length;
+                                   
+                                   const prog = patrolProgress[company.id] || { rounds: 0, data: {} };
+                                   const companyDriversCount = driversList.filter(d => d.companyId === company.id).length;
+                                   const checkedCount = Object.values(prog.data).filter(d => d.completed || d.inactive).length;
+                                   const progressPercent = companyDriversCount > 0 ? Math.round((checkedCount / companyDriversCount) * 100) : 0;
+                                   
+                                   const totalRounds = prog.rounds + (progressPercent === 100 ? 1 : 0);
+                                   
+                                   let cardState = 'unstarted';
+                                   if (progressPercent > 0 && progressPercent < 100) cardState = 'partial';
+                                   if (progressPercent === 100) cardState = 'completed';
+
+                                   const borderColors = {
+                                       unstarted: 'ring-slate-200 dark:ring-slate-800',
+                                       partial: 'ring-amber-200 dark:ring-amber-500/30 bg-amber-50/10 dark:bg-amber-900/10 shadow-[0_0_15px_rgba(245,158,11,0.05)]',
+                                       completed: 'ring-emerald-200 dark:ring-emerald-500/30 bg-emerald-50/10 dark:bg-emerald-900/10 shadow-[0_0_15px_rgba(16,185,129,0.05)]'
+                                   };
+
+                                   const iconColors = {
+                                       unstarted: 'bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 dark:from-blue-900 dark:to-blue-800 dark:text-blue-300 ring-1 ring-white/50 dark:ring-white/10',
+                                       partial: 'bg-gradient-to-br from-amber-100 to-amber-200 text-amber-700 dark:from-amber-900 dark:to-amber-800 dark:text-amber-300 ring-1 ring-white/50 dark:ring-white/10',
+                                       completed: 'bg-gradient-to-br from-emerald-100 to-emerald-200 text-emerald-700 dark:from-emerald-900 dark:to-emerald-800 dark:text-emerald-300 ring-1 ring-white/50 dark:ring-white/10'
+                                   };
+
+                                   const buttonColors = {
+                                       unstarted: 'bg-white dark:bg-slate-800 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 text-slate-700 dark:text-slate-200 ring-1 ring-slate-200 dark:ring-slate-700 hover:ring-transparent shadow-sm',
+                                       partial: 'bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-500/20',
+                                       completed: 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-500/20'
+                                   };
+                                   
+                                   return (
+                                     <div key={company.id} className={`bg-white dark:bg-slate-900 p-6 rounded-3xl ring-1 transition-all duration-300 group flex flex-col hover:shadow-soft relative overflow-hidden ${borderColors[cardState]}`}>
+                                       {cardState === 'completed' && <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500"></div>}
+                                       {cardState === 'partial' && <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500"></div>}
+                                       
+                                       <div className="flex justify-between items-start mb-5">
+                                          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-xl shadow-inner ${iconColors[cardState]}`}>
+                                            {company.name.charAt(0)}
+                                          </div>
+                                          <div className="flex flex-col items-end gap-1.5">
+                                             <span className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider ring-1 ring-slate-200 dark:ring-slate-700 shadow-sm">
+                                               {company.id}
+                                             </span>
+                                          </div>
+                                       </div>
+                                       <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 truncate tracking-tight" title={company.name}>{company.name}</h3>
+                                       
+                                       {(cardState === 'partial' || cardState === 'completed') && (
+                                           <div className="mb-4 mt-2">
+                                                <div className={`text-[10px] font-bold px-3 py-1.5 rounded-lg ring-1 shadow-sm inline-flex items-center gap-1.5 ${cardState === 'completed' ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 ring-emerald-200 dark:ring-emerald-500/20' : 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 ring-amber-200 dark:ring-amber-500/20'}`}>
+                                                    <Icons.CheckCircle size={12}/> 
+                                                    {cardState === 'completed' ? `Завершен (${totalRounds} раз)` : `В процессе: ${progressPercent}%`}
+                                                </div>
+                                           </div>
+                                       )}
+                                       
+                                       <p className="text-sm text-slate-500 dark:text-slate-400 mb-8 flex items-center gap-2 font-medium mt-auto pt-4">
+                                          <Icons.Users size={16} className="text-slate-400 dark:text-slate-500"/> {company.fleetSize} водителей (траков)
+                                       </p>
+                                       <button 
+                                         onClick={() => startPatrolDirectly(company.id, cardState === 'completed')} 
+                                         className={`mt-auto w-full py-3.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 active:scale-[0.98] ${buttonColors[cardState]}`}
+                                       >
+                                         <Icons.Activity size={16} /> 
+                                         {cardState === 'unstarted' ? 'Начать обход' : cardState === 'partial' ? 'Продолжить обход' : 'Повторный обход'}
+                                       </button>
+                                     </div>
+                                   )
+                                })}
+                                {myCompanies.length === 0 && (
+                                    <div className="col-span-full py-16 text-center flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 rounded-3xl ring-1 ring-slate-200 dark:ring-slate-800 shadow-sm">
+                                       <Icons.Search size={32} className="text-slate-300 dark:text-slate-600 mb-3" />
+                                       <p>{companySearch ? `Ничего не найдено по запросу "${companySearch}"` : 'У вас нет назначенных компаний. Перейдите в раздел "Компании", чтобы взять автопарк на обход.'}</p>
+                                    </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {activeWorkspaceView === 'request' && currentReq && (
+                            <div className="w-full max-w-4xl mx-auto flex flex-col bg-white dark:bg-slate-900 rounded-3xl ring-1 ring-slate-200 dark:ring-slate-800 shadow-2xl self-start transition-all overflow-hidden">
+                              
+                              <div className={`p-8 text-white shrink-0 relative overflow-hidden ${currentReq.type === 'message' ? 'bg-gradient-to-br from-indigo-600 to-indigo-800' : 'bg-gradient-to-br from-emerald-500 to-emerald-700'}`}>
+                                <div className="absolute top-0 right-0 p-8 opacity-10">
+                                   {currentReq.type === 'message' ? <Icons.MessageSquare size={120} /> : <Icons.Phone size={120} />}
+                                </div>
+                                <div className="flex justify-between items-start relative z-10">
+                                  <div>
+                                    <div className="text-white/70 font-mono text-[11px] mb-3 tracking-wider flex items-center gap-2">
+                                       {currentReq.id} 
+                                       <span>|</span> 
+                                       <span className="font-bold text-white uppercase tracking-widest">{currentReq.type === 'message' ? 'СООБЩЕНИЕ ИЗ ЧАТА' : 'ВХОДЯЩИЙ ЗВОНОК'}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 mb-3">
+                                       <h2 className="text-3xl font-extrabold tracking-tight drop-shadow-sm">{currentReq.driver.name}</h2>
+                                       {currentReq.driver.requiresApproval && <Icons.AlertTriangle size={24} className="text-amber-300 drop-shadow-md" title="Требует согласования" />}
+                                    </div>
+                                    <div className="text-white/90 text-sm font-medium flex items-center gap-2 mt-4">
+                                        <span className="bg-black/20 px-3 py-1.5 rounded-lg ring-1 ring-white/10 backdrop-blur-md">{currentReq.driver.company}</span>
+                                        <span className="bg-black/20 px-3 py-1.5 rounded-lg ring-1 ring-white/10 backdrop-blur-md font-mono">{currentReq.driver.truck}</span>
+                                    </div>
+                                    {currentReq.driver.requiresApproval && (
+                                        <div className="mt-5 text-[11px] font-bold text-amber-900 uppercase tracking-widest bg-amber-400 inline-block px-4 py-3 rounded-xl shadow-lg ring-1 ring-amber-300">
+                                            <div className="flex items-center gap-1.5"><Icons.AlertTriangle size={14} /> Действия только по согласованию</div>
+                                            {currentReq.driver.approvalNote && (
+                                                <div className="mt-2 text-xs font-semibold text-amber-900/90 normal-case tracking-normal border-t border-amber-500/30 pt-2">
+                                                    {currentReq.driver.approvalNote}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                  </div>
+                                  
+                                  {/* БЛОК ТАЙМЕРА ДЛЯ ЗВОНКА */}
+                                  {currentReq.type === 'call' && currentReq.callStatus === 'ongoing' ? (
+                                      <div className="flex flex-col items-end gap-3">
+                                         <span className="px-5 py-3 text-sm font-bold uppercase tracking-widest bg-rose-500/20 ring-1 ring-rose-500/50 rounded-xl shadow-sm backdrop-blur-md text-rose-50 flex items-center gap-3">
+                                            <span className="w-2.5 h-2.5 rounded-full bg-rose-400 animate-pulse"></span>
+                                            ИДЕТ РАЗГОВОР <CallTimer startTime={currentReq.callStartTime} />
+                                         </span>
+                                         <button onClick={() => handleStopCall(currentReq.id)} className="bg-rose-600 hover:bg-rose-500 text-white px-5 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all shadow-lg active:scale-95 flex items-center gap-2">
+                                            <Icons.PhoneOff size={16} /> ЗАВЕРШИТЬ ЗВОНОК
+                                         </button>
+                                      </div>
+                                  ) : currentReq.type === 'call' && currentReq.callStatus === 'ended' ? (
+                                      <span className="px-5 py-3 text-sm font-bold uppercase tracking-widest bg-black/20 ring-1 ring-white/20 rounded-xl shadow-sm backdrop-blur-md text-white flex items-center gap-3">
+                                         РАЗГОВОР ЗАВЕРШЕН <span className="font-mono text-emerald-300">{formatDurationSecs(currentReq.callDurationSecs)}</span>
+                                      </span>
+                                  ) : (
+                                      <span className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest bg-white/10 ring-1 ring-white/20 rounded-xl shadow-sm backdrop-blur-md">
+                                        В ПРОЦЕССЕ
+                                      </span>
+                                  )}
+
+                                </div>
+                              </div>
+                              
+                              <div className="p-8 flex-1 space-y-10 bg-slate-50/50 dark:bg-slate-900/50 relative">
+                                <div>
+                                  <h3 className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-200 dark:border-slate-800 pb-3">Выполненные действия</h3>
+                                  {currentReq.actions.length === 0 ? (
+                                    <div className="bg-white dark:bg-slate-950 ring-1 ring-slate-200 dark:ring-slate-800 border border-dashed border-slate-300 dark:border-slate-700 p-8 rounded-2xl text-center shadow-sm">
+                                      <p className="text-sm text-slate-400 dark:text-slate-500 font-medium">Действия не зафиксированы. Запрос не может быть закрыт.</p>
+                                    </div>
+                                  ) : (
+                                    <div className="flex flex-wrap gap-3">
+                                      {currentReq.actions.map((action, idx) => {
+                                        const isCallLog = action.startsWith('Завершили звонок');
+                                        
+                                        if (isCallLog) {
+                                          return (
+                                            <div key={idx} className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-200 dark:ring-emerald-500/30 px-4 py-2.5 rounded-xl text-xs font-semibold shadow-sm flex items-center gap-2 cursor-default" title="Системная запись о звонке (нельзя удалить)">
+                                                <Icons.CheckCircle size={14} className="text-emerald-500"/>
+                                                {action}
+                                            </div>
+                                          );
+                                        }
+                                        
+                                        return (
+                                          <button 
+                                            key={idx} 
+                                            onClick={() => handleRemoveAction(action)} 
+                                            className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 ring-1 ring-slate-200 dark:ring-slate-700 px-4 py-2.5 rounded-xl text-xs font-semibold shadow-sm flex items-center gap-2 hover:bg-rose-50 hover:text-rose-600 hover:ring-rose-200 dark:hover:bg-rose-500/10 dark:hover:text-rose-400 dark:hover:ring-rose-500/30 transition-all group cursor-pointer active:scale-95"
+                                            title="Убрать действие обратно в реестр"
+                                          >
+                                              <Icons.CheckCircle size={14} className="text-blue-500 group-hover:hidden"/>
+                                              <Icons.X size={14} className="text-rose-500 hidden group-hover:block"/>
+                                              {action}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div>
+                                  <h3 className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-200 dark:border-slate-800 pb-3">Реестр доступных действий</h3>
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                    {QUICK_ACTIONS.map((actionText, idx) => (
+                                      <button key={idx} onClick={() => handleAddAction(actionText)} disabled={currentReq.actions.includes(actionText)} className={`p-4 rounded-2xl ring-1 text-sm font-semibold text-left transition-all shadow-sm ${currentReq.actions.includes(actionText) ? 'bg-slate-100 dark:bg-slate-950 ring-slate-200 dark:ring-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed' : 'bg-white dark:bg-slate-800 ring-slate-200 dark:ring-slate-700 text-slate-700 dark:text-slate-200 hover:ring-blue-500 dark:hover:ring-blue-500 hover:shadow-md active:scale-[0.98]'}`}>
+                                        + {actionText}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                                
+                                {showAntiFraudAlert && (
+                                  <div className="bg-rose-50 dark:bg-rose-500/10 ring-1 ring-rose-200 dark:ring-rose-500/20 p-5 rounded-2xl flex items-start gap-3 shadow-sm mt-6 animate-in fade-in slide-in-from-bottom-2">
+                                    <Icons.AlertTriangle size={20} className="shrink-0 text-rose-600 dark:text-rose-400" />
+                                    <div className="text-sm text-rose-800 dark:text-rose-200 font-medium leading-relaxed"><strong>ВНИМАНИЕ:</strong> {antiFraudAlertMsg}</div>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="bg-slate-100/50 dark:bg-slate-950/50 p-6 border-t border-slate-200 dark:border-slate-800 flex gap-4 shrink-0 backdrop-blur-xl">
+                                <button onClick={handleCancelRequest} className="px-6 py-4 ring-1 ring-inset ring-slate-300 dark:ring-slate-700 text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm active:scale-95">ОТМЕНИТЬ</button>
+                                <button onClick={() => setShowEscalateModal(true)} className="px-6 py-4 ring-1 ring-inset ring-slate-300 dark:ring-slate-700 text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-sm active:scale-95">ЭСКАЛАЦИЯ</button>
+                                <button onClick={handleEndRequest} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all shadow-md active:scale-[0.98]">РЕШИТЬ И ЗАКРЫТЬ</button>
+                              </div>
+                            </div>
+                          )}
+
+                          {activeWorkspaceView === 'patrol' && activePatrol && (
+                            <div className="w-full max-w-7xl mx-auto flex flex-col xl:flex-row gap-8 items-start self-start">
+                              
+                              <div className="flex-1 w-full flex flex-col bg-white dark:bg-slate-900 rounded-3xl ring-1 ring-slate-200 dark:ring-slate-800 shadow-2xl transition-all overflow-hidden">
+                                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-8 text-white flex justify-between items-center shrink-0 shadow-md relative overflow-hidden">
+                                  <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12">
+                                     <Icons.Activity size={120} />
+                                  </div>
+                                  <div className="relative z-10">
+                                    <div className="text-blue-200 font-mono text-[11px] mb-2 tracking-wider flex items-center gap-2">
+                                        <Icons.Activity size={12}/> ОБХОД АВТОПАРКА
+                                    </div>
+                                    <h2 className="text-3xl font-extrabold tracking-tight drop-shadow-sm">{activePatrol.company.name}</h2>
+                                    <div className="font-mono text-xs text-blue-100 mt-2 opacity-80">{activePatrol.id}</div>
+                                  </div>
+                                  <span className="px-4 py-2 text-[11px] font-bold uppercase tracking-widest bg-black/20 ring-1 ring-white/20 rounded-xl shadow-sm backdrop-blur-md relative z-10">
+                                    АВТОПАРК: {activePatrol.company.fleetSize}
+                                  </span>
+                                </div>
+
+                                <div className="p-8 flex-1 space-y-8 overflow-y-visible bg-slate-50/50 dark:bg-slate-950/50 relative">
+                                  {(() => {
+                                    const companyDrivers = driversList.filter(d => d.companyId === activePatrol.company.id);
+                                    const uncompletedDrivers = companyDrivers.filter(d => !patrolData[d.id]?.completed && !patrolData[d.id]?.inactive);
+                                    
+                                    let searchedUncompletedDrivers = uncompletedDrivers.filter(d => 
+                                        (d.name.toLowerCase().includes(patrolDriverSearch.toLowerCase()) || 
+                                        d.truck.toLowerCase().includes(patrolDriverSearch.toLowerCase())) &&
+                                        (!filterSensitive || d.requiresApproval)
+                                    );
+
+                                    searchedUncompletedDrivers.sort((a, b) => {
+                                        if (patrolSortOrder === 'asc') return a.name.localeCompare(b.name);
+                                        return b.name.localeCompare(a.name);
+                                    });
+
+                                    const completedDrivers = companyDrivers.filter(d => patrolData[d.id]?.completed && !patrolData[d.id]?.inactive)
+                                        .sort((a, b) => patrolSortOrder === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
+                                    
+                                    const inactiveDrivers = companyDrivers.filter(d => patrolData[d.id]?.inactive)
+                                        .sort((a, b) => patrolSortOrder === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
+
+                                    const checkedCount = completedDrivers.length;
+                                    const inactiveCount = inactiveDrivers.length;
+                                    const activeTotal = companyDrivers.length - inactiveCount;
+                                    const selectedUncompleted = uncompletedDrivers.filter(d => patrolData[d.id]?.selected);
+                                    const selectedCount = selectedUncompleted.length;
+                                    
+                                    let totalPages = 1;
+                                    let currentUncompletedDrivers = searchedUncompletedDrivers;
+                                    let safeCurrentPage = patrolCurrentPage;
+                                    let limit = searchedUncompletedDrivers.length;
+
+                                    if (itemsPerPage !== 'All') {
+                                        limit = parseInt(itemsPerPage, 10);
+                                        totalPages = Math.max(1, Math.ceil(searchedUncompletedDrivers.length / limit));
+                                        safeCurrentPage = Math.min(patrolCurrentPage, totalPages);
+                                        const startIndex = (safeCurrentPage - 1) * limit;
+                                        currentUncompletedDrivers = searchedUncompletedDrivers.slice(startIndex, startIndex + limit);
+                                    } else {
+                                        safeCurrentPage = 1;
+                                    }
+
+                                    const allSelected = currentUncompletedDrivers.length > 0 && currentUncompletedDrivers.every(d => patrolData[d.id]?.selected);
+
+                                    return (
+                                      <div>
+                                        {selectedCount > 0 && (
+                                          <div className="bg-slate-900 dark:bg-slate-800 ring-1 ring-slate-800 dark:ring-slate-700 p-6 rounded-3xl mb-8 sticky top-4 z-30 text-white shadow-2xl backdrop-blur-2xl transition-all border-t border-slate-700 dark:border-slate-600">
+                                            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+                                                <div>
+                                                  <div className="text-[11px] font-bold text-slate-400 mb-4 uppercase tracking-widest flex items-center gap-2">
+                                                      <Icons.CheckCircle size={16} className="text-blue-400"/> Выбрано водителей: <span className="text-white bg-slate-800 dark:bg-slate-950 px-2 py-0.5 rounded">{selectedCount}</span>
+                                                  </div>
+                                                  <div className="flex flex-wrap gap-2.5">
+                                                     {PATROL_DRIVER_ACTIONS.map(fix => {
+                                                        const allHaveFix = selectedUncompleted.every(d => patrolData[d.id]?.fixes.includes(fix));
+                                                        return (
+                                                          <button key={`bulk-${fix}`} onClick={() => handleToggleBulkFix(fix)} className={`text-[11px] px-4 py-2.5 rounded-xl ring-1 font-bold uppercase tracking-wider transition-colors shadow-sm ${allHaveFix ? 'bg-white text-slate-900 ring-white' : 'bg-slate-800 text-slate-300 ring-slate-700 hover:bg-slate-700 hover:text-white'}`}>
+                                                            {allHaveFix ? '■ ' : '□ '} {fix}
+                                                          </button>
+                                                        )
+                                                     })}
+                                                  </div>
+                                                </div>
+                                                <div className="flex flex-wrap items-center gap-3 mt-4 xl:mt-0 shrink-0 border-t xl:border-t-0 xl:border-l border-slate-700 dark:border-slate-600 pt-5 xl:pt-0 xl:pl-6">
+                                                    <button onClick={handleToggleApprovalStatus} className="bg-amber-500/10 hover:bg-amber-500/20 ring-1 ring-amber-500/30 text-amber-500 px-5 py-3 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-colors shadow-sm flex items-center gap-2">
+                                                        <Icons.AlertTriangle size={14}/> {selectedUncompleted.every(d => d.requiresApproval) ? 'Снять статус' : 'Особый статус'}
+                                                    </button>
+                                                    <button onClick={handleMarkInactive} className="bg-slate-800 dark:bg-slate-950 hover:bg-slate-700 dark:hover:bg-slate-900 ring-1 ring-slate-700 text-white px-5 py-3 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-colors shadow-sm flex items-center gap-2"><Icons.Moon size={14}/> В отгул</button>
+                                                    <button onClick={handleMoveToCompleted} className="bg-white hover:bg-slate-100 text-slate-900 px-8 py-3 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all shadow-md active:scale-95 flex items-center gap-2"><Icons.CheckCircle size={14}/> Готово</button>
+                                                </div>
+                                            </div>
+                                          </div>
+                                        )}
+
+                                        <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 border-b border-slate-200 dark:border-slate-800 pb-5 gap-4">
+                                          <div>
+                                            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-widest flex items-center gap-2"><div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div> Ожидают проверки <span className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-md ml-1">{uncompletedDrivers.length}</span></h3>
+                                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 font-medium">Удерживайте <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-800 ring-1 ring-slate-200 dark:ring-slate-700 rounded text-slate-700 dark:text-slate-300 font-mono text-[10px] shadow-sm">Shift</kbd> для массового выделения</p>
+                                          </div>
+                                          
+                                          <div className="flex flex-wrap items-center gap-3">
+                                            <div className="relative min-w-[240px]">
+                                              <Icons.Search className="absolute left-3.5 top-3 text-slate-400" size={16} />
+                                              <input 
+                                                type="text" 
+                                                placeholder="Поиск по имени или траку..." 
+                                                className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 ring-1 ring-slate-200 dark:ring-slate-800 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors shadow-sm"
+                                                value={patrolDriverSearch}
+                                                onChange={e => { setPatrolDriverSearch(e.target.value); setPatrolCurrentPage(1); }}
+                                              />
+                                            </div>
+                                            
+                                            <div className="flex items-center gap-3 bg-white dark:bg-slate-900 p-1.5 rounded-xl ring-1 ring-slate-200 dark:ring-slate-800 shadow-sm">
+                                              <div className="flex items-center px-3 border-r border-slate-200 dark:border-slate-700">
+                                                  <Icons.Filter size={14} className="text-slate-400 mr-2" />
+                                                  <select 
+                                                      value={itemsPerPage} 
+                                                      onChange={(e) => { setItemsPerPage(e.target.value); setPatrolCurrentPage(1); }}
+                                                      className="text-[11px] font-bold uppercase tracking-widest bg-transparent border-none focus:outline-none text-slate-700 dark:text-slate-300 cursor-pointer appearance-none"
+                                                  >
+                                                      <option value="25">25 / СТР</option>
+                                                      <option value="50">50 / СТР</option>
+                                                      <option value="All">ВСЕ</option>
+                                                  </select>
+                                              </div>
+                                              
+                                              <div className="flex items-center border-r border-slate-200 dark:border-slate-700 pr-3">
+                                                  <button 
+                                                    onClick={() => setFilterSensitive(!filterSensitive)} 
+                                                    className={`text-[10px] font-bold uppercase tracking-widest px-3 py-2 rounded-lg ring-1 transition-colors flex items-center gap-1.5 ${filterSensitive ? 'bg-amber-50 dark:bg-amber-500/10 ring-amber-200 dark:ring-amber-500/30 text-amber-700 dark:text-amber-400' : 'bg-transparent ring-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                                                    title="Показать только требующих согласования"
+                                                  >
+                                                    <Icons.AlertTriangle size={14} /> Особый статус
+                                                  </button>
+                                              </div>
+
+                                              <div className="flex gap-1 items-center pr-3 pl-3">
+                                                <button onClick={() => setPatrolViewMode('list')} className={`p-1.5 rounded-md transition-colors ${patrolViewMode === 'list' ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}><Icons.List size={16} /></button>
+                                                <button onClick={() => setPatrolViewMode('grid')} className={`p-1.5 rounded-md transition-colors ${patrolViewMode === 'grid' ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}><Icons.Grid size={16} /></button>
+                                                
+                                                <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1"></div>
+                                                <button onClick={() => setPatrolSortOrder(o => o === 'asc' ? 'desc' : 'asc')} className={`p-1.5 rounded-md transition-colors hover:text-slate-700 dark:hover:text-slate-300 text-slate-500 dark:text-slate-400`} title="Сортировка А-Я">
+                                                    {patrolSortOrder === 'asc' ? <Icons.SortAsc size={16}/> : <Icons.SortDesc size={16}/>}
+                                                </button>
+                                              </div>
+                                              <button onClick={handleSelectAllDrivers} className={`text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-lg ring-1 transition-colors ${allSelected ? 'bg-slate-100 dark:bg-slate-800 ring-slate-200 dark:ring-slate-700 text-slate-700 dark:text-slate-300' : 'bg-transparent ring-slate-200 dark:ring-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                                                {allSelected ? 'Снять все' : 'Выбрать всех'}
+                                              </button>
+                                            </div>
+                                          </div>
+                                        </div>
+                                        
+                                        {searchedUncompletedDrivers.length > 0 ? (
+                                           <div className={patrolViewMode === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 2xl:grid-cols-4 gap-4" : "flex flex-col gap-3"}>
+                                             {currentUncompletedDrivers.map((driver, index) => {
+                                               const isSelected = patrolData[driver.id]?.selected || false;
+                                               const isSensitive = driver.requiresApproval;
+                                               
+                                               return (
+                                                 <div key={driver.id} onClick={(e) => handleToggleDriverSelect(driver.id, index, e, currentUncompletedDrivers)} className={`group p-4 rounded-2xl ring-1 cursor-pointer select-none flex items-start gap-4 transition-all duration-200 ${isSelected ? 'bg-blue-50 dark:bg-blue-500/10 ring-blue-400 dark:ring-blue-500 shadow-md transform scale-[0.99]' : isSensitive ? 'bg-amber-50/50 dark:bg-amber-500/5 ring-amber-200 dark:ring-amber-500/20 hover:ring-amber-400 dark:hover:ring-amber-500/50 shadow-sm hover:shadow-md' : 'bg-white dark:bg-slate-900 ring-slate-200 dark:ring-slate-800 hover:ring-blue-300 dark:hover:ring-blue-500/50 shadow-sm hover:shadow-md'}`}>
+                                                    <div className={`mt-0.5 w-6 h-6 rounded-lg ring-1 flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-blue-600 ring-blue-600 text-white' : isSensitive ? 'ring-amber-300 bg-amber-100 dark:bg-amber-500/20 dark:ring-amber-500/30 text-amber-600 dark:text-amber-400' : 'ring-slate-300 dark:ring-slate-700 bg-slate-50 dark:bg-slate-800 group-hover:ring-blue-300 dark:group-hover:ring-blue-500/50'}`}>
+                                                       {isSelected && <Icons.CheckCircle size={14} />}
+                                                    </div>
+                                                    <div className="min-w-0 flex-1">
+                                                      <div className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight truncate flex items-center gap-2 mb-1">
+                                                        <span className="truncate">{driver.name}</span>
+                                                        <button onClick={(e) => handleCopyName(e, driver.name)} className="text-slate-400 hover:text-blue-600 transition-colors p-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-500/20 shrink-0" title="Скопировать имя">
+                                                          {copiedDriver === driver.name ? <Icons.CheckCircle size={14} className="text-emerald-500"/> : <Icons.Copy size={14}/>}
+                                                        </button>
+                                                        {isSensitive && <Icons.AlertTriangle size={16} className="text-amber-500 shrink-0" title="Требует согласования!" />}
+                                                      </div>
+                                                      <div className="text-xs text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></div> {driver.truck}</div>
+                                                      
+                                                      {isSensitive && (
+                                                        <div className="mt-4 text-[10px] font-bold text-amber-800 dark:text-amber-400 uppercase tracking-widest bg-amber-100/50 dark:bg-amber-500/10 p-3 rounded-xl ring-1 ring-amber-200 dark:ring-amber-500/20">
+                                                            <div className="flex items-center gap-1.5"><Icons.AlertTriangle size={12}/> Только по согласованию</div>
+                                                            {driver.approvalNote && (
+                                                              <div className="mt-2 text-xs font-semibold text-amber-900 dark:text-amber-300 normal-case tracking-normal border-t border-amber-200/50 dark:border-amber-500/20 pt-2 opacity-90">
+                                                                  {driver.approvalNote}
+                                                              </div>
+                                                            )}
+                                                        </div>
+                                                      )}
+                                                    </div>
+                                                 </div>
+                                               )
+                                             })}
+                                           </div>
+                                        ) : (
+                                           <div className="bg-white dark:bg-slate-900 ring-1 ring-slate-200 dark:ring-slate-800 border border-dashed border-slate-300 dark:border-slate-700 p-12 rounded-3xl text-center text-slate-500 dark:text-slate-400 text-sm font-semibold shadow-sm">
+                                             <Icons.CheckCircle size={48} className="mx-auto text-slate-300 dark:text-slate-700 mb-4" />
+                                             {uncompletedDrivers.length > 0 ? 'Ничего не найдено по вашему запросу.' : 'Все активные водители проверены. Отличная работа!'}
+                                           </div>
+                                        )}
+                                        
+                                        {totalPages > 1 && searchedUncompletedDrivers.length > 0 && itemsPerPage !== 'All' && (
+                                          <div className="flex items-center justify-center gap-2 mt-10 border-t border-slate-200 dark:border-slate-800 pt-8">
+                                             <button onClick={() => setPatrolCurrentPage(p => Math.max(1, p - 1))} disabled={safeCurrentPage === 1} className="px-5 py-2.5 ring-1 ring-slate-200 dark:ring-slate-800 rounded-xl text-[11px] font-bold uppercase tracking-wider disabled:opacity-50 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Назад</button>
+                                             <div className="flex items-center gap-1 mx-2">
+                                                {Array.from({ length: totalPages }).map((_, i) => (
+                                                    <button key={i} onClick={() => setPatrolCurrentPage(i + 1)} className={`w-10 h-10 rounded-xl text-xs font-bold ring-1 transition-all ${safeCurrentPage === i + 1 ? 'bg-blue-600 text-white ring-blue-600 shadow-md shadow-blue-500/20' : 'bg-white dark:bg-slate-900 ring-slate-200 dark:ring-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>{i + 1}</button>
+                                                ))}
+                                             </div>
+                                             <button onClick={() => setPatrolCurrentPage(p => Math.min(totalPages, p + 1))} disabled={safeCurrentPage === totalPages} className="px-5 py-2.5 ring-1 ring-slate-200 dark:ring-slate-800 rounded-xl text-[11px] font-bold uppercase tracking-wider disabled:opacity-50 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Вперед</button>
+                                          </div>
+                                        )}
+
+                                        {checkedCount > 0 && (
+                                          <div className="mt-14 animate-in slide-in-from-bottom-4 duration-500">
+                                            <div className="flex items-center justify-between cursor-pointer group bg-emerald-50/50 dark:bg-emerald-500/5 p-6 rounded-3xl ring-1 ring-emerald-200/50 dark:ring-emerald-500/20 mb-6 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors shadow-sm" onClick={() => setCheckedSectionOpen(!checkedSectionOpen)}>
+                                               <h3 className="text-sm font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-widest flex items-center gap-3">
+                                                 <Icons.CheckCircle size={20}/> Проверено: {checkedCount} / {activeTotal} 
+                                                 <span className="ml-3 text-xs bg-white dark:bg-slate-900 ring-1 ring-emerald-200 dark:ring-emerald-500/30 px-3 py-1 rounded-lg shadow-sm text-emerald-700 dark:text-emerald-400">{activeTotal > 0 ? Math.round((checkedCount / activeTotal) * 100) : 100}%</span>
+                                               </h3>
+                                               <div className="p-2 bg-white dark:bg-slate-900 rounded-xl ring-1 ring-emerald-100 dark:ring-emerald-500/20 shadow-sm group-hover:scale-105 transition-transform">
+                                                  {checkedSectionOpen ? <Icons.ChevronUp size={18} className="text-emerald-600 dark:text-emerald-500"/> : <Icons.ChevronDown size={18} className="text-emerald-600 dark:text-emerald-500"/>}
+                                               </div>
+                                            </div>
+                                            {checkedSectionOpen && (
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                                   {completedDrivers.map(driver => (
+                                                     <div key={`comp-${driver.id}`} className="p-5 bg-white dark:bg-slate-900 ring-1 ring-slate-200 dark:ring-slate-800 rounded-2xl flex justify-between items-start shadow-sm hover:ring-slate-300 dark:hover:ring-slate-600 transition-all group">
+                                                        <div className="min-w-0">
+                                                          <div className="font-bold text-xs text-slate-900 dark:text-slate-100 truncate flex items-center gap-2 mb-2">
+                                                             <span className="truncate">{driver.name}</span>
+                                                             <button onClick={(e) => handleCopyName(e, driver.name)} className="text-slate-400 hover:text-blue-500 transition-colors shrink-0" title="Скопировать имя">
+                                                                {copiedDriver === driver.name ? <Icons.CheckCircle size={14} className="text-emerald-500"/> : <Icons.Copy size={14}/>}
+                                                             </button>
+                                                             {driver.requiresApproval && <Icons.AlertTriangle size={14} className="text-amber-500 shrink-0" />}
+                                                          </div>
+                                                          <div className="flex flex-wrap gap-2 mt-3">
+                                                             {patrolData[driver.id]?.fixes.map((f, i) => <span key={i} className="text-[10px] px-2.5 py-1 rounded-md ring-1 bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 ring-slate-200 dark:ring-slate-700 font-semibold">{f}</span>)}
+                                                          </div>
+                                                        </div>
+                                                        <button onClick={() => setPatrolData(prev => ({...prev, [driver.id]: {...prev[driver.id], completed: false, selected: true}}))} className="text-slate-400 hover:text-slate-900 dark:hover:text-white shrink-0 ml-4 bg-slate-50 dark:bg-slate-800 p-2 rounded-xl ring-1 ring-slate-200 dark:ring-slate-700 shadow-sm transition-all hover:scale-105 active:scale-95" title="Вернуть в очередь"><Icons.History size={16}/></button>
+                                                     </div>
+                                                   ))}
+                                                </div>
+                                            )}
+                                          </div>
+                                        )}
+
+                                        {inactiveCount > 0 && (
+                                          <div className="mt-8">
+                                            <div className="flex items-center justify-between cursor-pointer group bg-slate-100/50 dark:bg-slate-800/30 p-5 rounded-3xl ring-1 ring-slate-200 dark:ring-slate-800 mb-6 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors shadow-sm" onClick={() => setInactiveSectionOpen(!inactiveSectionOpen)}>
+                                               <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-3"><Icons.Moon size={18}/> Неактивные / В отгуле: <span className="bg-white dark:bg-slate-900 px-2 py-0.5 rounded-lg ring-1 ring-slate-200 dark:ring-slate-700">{inactiveCount}</span></h3>
+                                               <div className="p-2 bg-white dark:bg-slate-900 rounded-xl ring-1 ring-slate-200 dark:ring-slate-700 shadow-sm">
+                                                  {inactiveSectionOpen ? <Icons.ChevronUp size={18} className="text-slate-400"/> : <Icons.ChevronDown size={18} className="text-slate-400"/>}
+                                               </div>
+                                            </div>
+                                            {inactiveSectionOpen && (
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                                                   {inactiveDrivers.map(driver => (
+                                                     <div key={`inact-${driver.id}`} className="p-4 bg-slate-50 dark:bg-slate-900/50 ring-1 ring-slate-200 dark:ring-slate-800/80 rounded-2xl flex justify-between items-center opacity-60 hover:opacity-100 transition-opacity group">
+                                                        <div className="font-semibold text-xs text-slate-500 dark:text-slate-400 line-through truncate flex items-center gap-2">
+                                                          <span className="truncate">{driver.name}</span>
+                                                          <button onClick={(e) => handleCopyName(e, driver.name)} className="text-slate-400 hover:text-blue-500 transition-colors shrink-0" title="Скопировать имя">
+                                                            {copiedDriver === driver.name ? <Icons.CheckCircle size={14} className="text-emerald-500"/> : <Icons.Copy size={14}/>}
+                                                          </button>
+                                                        </div>
+                                                        <button onClick={() => setPatrolData(prev => ({...prev, [driver.id]: {...prev[driver.id], inactive: false, selected: true}}))} className="text-slate-400 hover:text-slate-900 dark:hover:text-white ml-4 bg-white dark:bg-slate-800 p-2 rounded-xl ring-1 ring-slate-200 dark:ring-slate-700 shadow-sm transition-transform hover:scale-105 active:scale-95"><Icons.History size={16}/></button>
+                                                     </div>
+                                                   ))}
+                                                </div>
+                                            )}
+                                          </div>
+                                        )}
+
+                                      </div>
+                                    )
+                                  })()}
+                                  {showAntiFraudAlert && <div className="bg-rose-50 dark:bg-rose-500/10 ring-1 ring-rose-200 dark:ring-rose-500/20 p-5 rounded-2xl text-sm text-rose-800 dark:text-rose-200 font-bold shadow-sm flex items-center gap-3 mt-6 animate-in fade-in slide-in-from-bottom-2"><Icons.AlertTriangle size={24}/> {antiFraudAlertMsg}</div>}
+                                </div>
+                                
+                                <div className="bg-slate-100/50 dark:bg-slate-950/50 p-6 border-t border-slate-200 dark:border-slate-800 flex gap-4 shrink-0 backdrop-blur-xl">
+                                  <button onClick={() => { setActivePatrol(null); setPatrolData({}); setPatrolDriverSearch(''); setActiveWorkspaceView(activeRequests.length > 0 ? 'request' : 'idle'); }} className="px-8 py-4 ring-1 ring-inset ring-slate-300 dark:ring-slate-700 text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm active:scale-95">ОТМЕНИТЬ ОБХОД</button>
+                                  <button onClick={handleEndPatrol} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all shadow-md active:scale-[0.98]">ЗАВЕРШИТЬ ОБХОД И СОХРАНИТЬ</button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                        </>
+                      )}
+
+                    </main>
+
+                    {/* ПРАВАЯ ПАНЕЛЬ (СВОДКА - SIDEBAR) */}
+                    <div className={`${rightSidebarOpen ? 'w-80' : 'w-0'} bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-l border-slate-200/60 dark:border-slate-800/60 flex flex-col shrink-0 transition-all duration-300 overflow-hidden z-20`}>
+                      <div className="w-80 h-full flex flex-col p-6 overflow-y-auto custom-scrollbar">
+                         <h2 className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-6 mt-2 flex items-center gap-2"><Icons.BarChart2 size={16}/> Сводка за смену</h2>
+                         
+                         <div className="space-y-4">
+                             <div className="bg-blue-50 dark:bg-blue-500/10 p-6 rounded-3xl ring-1 ring-blue-100 dark:ring-blue-500/20 shadow-sm flex items-center justify-between relative overflow-hidden group">
+                                <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/4 opacity-10 group-hover:scale-110 transition-transform duration-500"><Icons.Activity size={100}/></div>
+                                <div className="relative z-10">
+                                   <div className="text-[10px] uppercase font-bold tracking-widest text-blue-600 dark:text-blue-400 mb-1">Прогресс обходов</div>
+                                   <div className="text-4xl font-black text-blue-700 dark:text-blue-300 flex items-baseline gap-2">
+                                       {basePatrolPercent}%
+                                       {bonusPatrolPercent > 0 && <span className="text-lg font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-500/20 px-2 rounded-lg">+{bonusPatrolPercent}%</span>}
+                                   </div>
+                                </div>
+                             </div>
+
+                             <div className="grid grid-cols-2 gap-4">
+                               <div className="bg-indigo-50 dark:bg-indigo-500/10 p-5 rounded-3xl ring-1 ring-indigo-100 dark:ring-indigo-500/20 shadow-sm flex flex-col justify-center relative overflow-hidden group">
+                                  <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform duration-500"><Icons.MessageSquare size={80}/></div>
+                                  <div className="relative z-10">
+                                     <div className="text-[10px] uppercase font-bold tracking-widest text-indigo-600 dark:text-indigo-400 mb-1">Сообщения</div>
+                                     <div className="text-3xl font-black text-indigo-700 dark:text-indigo-300">{messagesCount}</div>
+                                  </div>
+                               </div>
+
+                               <div className="bg-emerald-50 dark:bg-emerald-500/10 p-5 rounded-3xl ring-1 ring-emerald-100 dark:ring-emerald-500/20 shadow-sm flex flex-col justify-center relative overflow-hidden group">
+                                  <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform duration-500"><Icons.Phone size={80}/></div>
+                                  <div className="relative z-10">
+                                     <div className="text-[10px] uppercase font-bold tracking-widest text-emerald-600 dark:text-emerald-400 mb-1">Звонки</div>
+                                     <div className="text-3xl font-black text-emerald-700 dark:text-emerald-300">{callsCount}</div>
+                                  </div>
+                               </div>
+                             </div>
+
+                             <div className="bg-slate-100 dark:bg-slate-800/50 p-6 rounded-3xl ring-1 ring-slate-200 dark:ring-slate-700 shadow-sm flex items-center justify-between relative overflow-hidden group mt-4">
+                                <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/4 opacity-[0.03] dark:opacity-10 group-hover:scale-110 transition-transform duration-500"><Icons.Shield size={100}/></div>
+                                <div className="relative z-10">
+                                   <div className="text-[10px] uppercase font-bold tracking-widest text-slate-500 dark:text-slate-400 mb-1">Правки логбука</div>
+                                   <div className="text-4xl font-black text-slate-700 dark:text-slate-200">{fixesCount}</div>
+                                </div>
+                             </div>
+                         </div>
+                      </div>
+                    </div>
+
+                    {/* ПЛАВАЮЩАЯ КНОПКА (FAB) ДЛЯ НОВОГО ОБРАЩЕНИЯ */}
+                    {shiftState === 'Active' && activeTab === 'workspace' && (
+                      <button
+                        onClick={() => setShowNewRequestModal(true)}
+                        style={{ right: rightSidebarOpen ? '22rem' : '3rem' }}
+                        className={`absolute bottom-8 w-16 h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-[0_8px_30px_rgb(37,99,235,0.3)] flex items-center justify-center transform hover:scale-105 active:scale-95 transition-all duration-300 z-40 group ring-4 ring-white/50 dark:ring-slate-900/50`}
+                        title="Новое обращение"
+                      >
+                        <Icons.Plus size={28} className="group-hover:rotate-90 transition-transform duration-300" />
+                      </button>
+                    )}
+
+                  </div>
+
+                  {/* МОДАЛЬНОЕ ОКНО "НОВОЕ ОБРАЩЕНИЕ" */}
+                  {showNewRequestModal && (
+                    <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+                      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden ring-1 ring-slate-200 dark:ring-slate-800 transform scale-100 animate-in zoom-in-95 duration-200">
+                        <div className="bg-slate-50 dark:bg-slate-950 px-8 py-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                          <h2 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
+                            <div className="p-1.5 bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-lg"><Icons.Plus size={16}/></div> Новое обращение
+                          </h2>
+                          <button onClick={() => setShowNewRequestModal(false)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 p-2 rounded-xl ring-1 ring-slate-200 dark:ring-slate-700 transition-all active:scale-95 shadow-sm"><Icons.X size={16} /></button>
+                        </div>
+                        <div className="p-8">
+                          <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 font-medium leading-relaxed">Откройте новую вкладку для входящего запроса. Ваш текущий прогресс будет сохранен.</p>
+                          <label className="block text-[10px] font-bold text-slate-900 dark:text-white mb-3 uppercase tracking-widest">Выбор водителя</label>
+                          
+                          <div className="relative mb-0">
+                            <Icons.Search className="absolute left-4 top-3.5 text-slate-400" size={16} />
+                            <input 
+                              type="text" 
+                              placeholder="Поиск по имени или ID..." 
+                              className="w-full pl-11 pr-4 py-3 bg-white dark:bg-slate-950 ring-1 ring-slate-200 dark:ring-slate-700 rounded-t-2xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow"
+                              value={driverSearch}
+                              onChange={e => setDriverSearch(e.target.value)}
+                            />
+                          </div>
+                          <div className="w-full h-56 overflow-y-auto bg-slate-50/50 dark:bg-slate-900 border-x border-b border-slate-200 dark:border-slate-700 rounded-b-2xl p-2 mb-8 custom-scrollbar shadow-inner">
+                            {filteredDrivers.map(d => (
+                              <div 
+                                key={d.id}
+                                onClick={() => setSelectedDriverId(d.id)}
+                                className={`py-3 px-4 mb-1 cursor-pointer rounded-xl text-sm font-semibold transition-all flex justify-between items-center ${
+                                  selectedDriverId === d.id 
+                                    ? 'bg-blue-600 text-white shadow-md transform scale-[0.98]' 
+                                    : 'text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm'
+                                }`}
+                              >
+                                <span>{d.name}</span>
+                                <span className={`font-mono text-[10px] px-2 py-1 rounded-lg font-bold ${selectedDriverId === d.id ? 'bg-blue-700/50 text-blue-100' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'}`}>
+                                  {d.companyId}
+                                </span>
+                              </div>
+                            ))}
+                            {filteredDrivers.length === 0 && (
+                              <div className="text-slate-400 dark:text-slate-500 italic px-4 py-8 text-center text-sm font-medium">Водитель не найден</div>
+                            )}
+                          </div>
+
+                          <div className="flex gap-4">
+                            <button onClick={() => handleStartRequest('message')} disabled={!selectedDriverId} className={`flex-1 py-4 rounded-2xl text-[11px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${selectedDriverId ? 'bg-indigo-50 dark:bg-indigo-500/10 ring-1 ring-indigo-200 dark:ring-indigo-500/30 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 active:scale-95 shadow-sm' : 'bg-slate-50 dark:bg-slate-800/50 text-slate-400 dark:text-slate-600 ring-1 ring-slate-200 dark:ring-slate-800 cursor-not-allowed'}`}>
+                              <Icons.MessageSquare size={16} /> Чат
+                            </button>
+                            <button onClick={() => handleStartRequest('call')} disabled={!selectedDriverId} className={`flex-1 py-4 rounded-2xl text-[11px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${selectedDriverId ? 'bg-blue-600 hover:bg-blue-700 text-white active:scale-95 shadow-md shadow-blue-500/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed ring-1 ring-slate-200 dark:ring-slate-700'}`}>
+                              <Icons.Phone size={16} /> Звонок
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Модальное окно Эскалации */}
+                  {showEscalateModal && (
+                    <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+                      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden ring-1 ring-slate-200 dark:ring-slate-800 transform scale-100 animate-in zoom-in-95 duration-200">
+                        <div className="bg-slate-50 dark:bg-slate-950 px-8 py-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                          <h2 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
+                             <div className="p-1.5 bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-lg"><Icons.AlertTriangle size={16}/></div> Эскалация запроса
+                          </h2>
+                          <button onClick={() => setShowEscalateModal(false)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 p-2 rounded-xl ring-1 ring-slate-200 dark:ring-slate-700 transition-all active:scale-95 shadow-sm"><Icons.X size={16} /></button>
+                        </div>
+                        <div className="p-8">
+                          <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 font-medium">Выберите специалиста или менеджера для передачи запроса.</p>
+                          <div className="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
+                            {EMPLOYEES.map((emp, idx) => (
+                              <button key={idx} onClick={() => handleEscalate(emp)} className="w-full text-left px-5 py-4 ring-1 ring-slate-200 dark:ring-slate-700 rounded-2xl text-sm font-bold text-slate-700 dark:text-slate-300 hover:ring-blue-500 dark:hover:ring-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-all shadow-sm hover:shadow-md flex items-center justify-between group">
+                                {emp} 
+                                <div className="p-1 rounded-lg bg-slate-100 dark:bg-slate-800 group-hover:bg-blue-100 dark:group-hover:bg-blue-500/20 transition-colors">
+                                  <Icons.ChevronDown size={16} className="text-slate-400 dark:text-slate-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 -rotate-90"/>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Модальное окно "Примечание к особому статусу" */}
+                  {showApprovalNoteModal && (
+                    <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+                      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden ring-1 ring-slate-200 dark:ring-slate-800 transform scale-100 animate-in zoom-in-95 duration-200">
+                        <div className="bg-amber-50 dark:bg-amber-500/10 px-8 py-6 border-b border-amber-200 dark:border-amber-500/20 flex justify-between items-center">
+                          <h2 className="text-xs font-bold text-amber-700 dark:text-amber-500 uppercase tracking-widest flex items-center gap-2">
+                            <div className="p-1.5 bg-amber-200 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 rounded-lg"><Icons.AlertTriangle size={16} /></div> Добавить примечание
+                          </h2>
+                          <button onClick={() => setShowApprovalNoteModal(false)} className="text-amber-500 hover:text-amber-800 dark:hover:text-amber-300 bg-amber-100/50 dark:bg-amber-500/20 hover:bg-amber-200 dark:hover:bg-amber-500/40 p-2 rounded-xl transition-all active:scale-95"><Icons.X size={16} /></button>
+                        </div>
+                        <div className="p-8">
+                          <p className="text-sm text-slate-600 dark:text-slate-300 mb-5 font-medium leading-relaxed">
+                            Укажите причину, по которой выбранным водителям назначен особый статус (например, "Не менять логбук без звонка").
+                          </p>
+                          <textarea
+                            className="w-full bg-slate-50 dark:bg-slate-950 ring-1 ring-slate-200 dark:ring-slate-700 rounded-2xl p-5 text-sm font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-shadow resize-none shadow-inner"
+                            rows="4"
+                            placeholder="Введите примечание (необязательно)..."
+                            value={approvalNoteInput}
+                            onChange={(e) => setApprovalNoteInput(e.target.value)}
+                            autoFocus
+                          />
+                          <div className="flex gap-4 mt-8">
+                            <button onClick={() => setShowApprovalNoteModal(false)} className="flex-1 py-4 ring-1 ring-inset ring-slate-300 dark:ring-slate-700 text-slate-700 dark:text-slate-300 rounded-2xl text-[11px] font-bold uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm active:scale-95">Отмена</button>
+                            <button onClick={handleConfirmApprovalNote} className="flex-1 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl text-[11px] font-bold uppercase tracking-widest transition-all shadow-md active:scale-95 shadow-amber-500/20">Сохранить</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<MotionELD />);
+    </script>
+</body>
+</html>
