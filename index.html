@@ -16,6 +16,26 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
+         window.onload = function () {
+
+    const savedText = localStorage.getItem("myText");
+
+    if (savedText) {
+      document.getElementById("textInput").value = savedText;
+    }
+
+  };
+
+  // Сохраняем данные
+  function saveData() {
+
+    const text = document.getElementById("textInput").value;
+
+    localStorage.setItem("myText", text);
+
+    alert("Saved!");
+
+  }
         tailwind.config = {
             darkMode: 'class',
             theme: {
