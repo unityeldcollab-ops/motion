@@ -470,7 +470,7 @@
           
           const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
           const [rightSidebarOpen, setRightSidebarOpen] = useState(false); 
-          const [activeTab, setActiveTab] = useState('employees'); // Для демонстрации сразу откроем Сотрудников
+          const [activeTab, setActiveTab] = useState('workspace');
           
           const [assignedCompanyIds, setAssignedCompanyIds] = useState(['C-05']); 
           const [patrolProgress, setPatrolProgress] = useState({});
@@ -1091,7 +1091,7 @@
                                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200'
                             }`}
                          >
-                           {item.icon} {item.label}
+                            {item.icon} {item.label}
                          </button>
                       ))}
                     </div>
@@ -1423,7 +1423,7 @@
                               <div className="flex items-center gap-3">
                                  <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-950 px-3 py-2 rounded-lg ring-1 ring-slate-200 dark:ring-slate-800 shadow-sm flex items-center gap-1.5">
                                     Прогресс: <span className="text-blue-600 dark:text-blue-400 text-xs">
-                                       {basePatrolPercent}% {bonusPatrolPercent > 0 && <span className="text-emerald-500">(+{bonusPatrolPercent}%)</span>}
+                                        {basePatrolPercent}% {bonusPatrolPercent > 0 && <span className="text-emerald-500">(+{bonusPatrolPercent}%)</span>}
                                     </span>
                                  </span>
                                  <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-950 px-3 py-2 rounded-lg ring-1 ring-slate-200 dark:ring-slate-800 shadow-sm flex items-center gap-1.5">
@@ -1636,6 +1636,9 @@
                                        className="pl-10 pr-4 py-2.5 w-48 lg:w-64 bg-white dark:bg-slate-900 ring-1 ring-slate-200 dark:ring-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-slate-200 shadow-sm transition-all" 
                                      />
                                   </div>
+                                  <button onClick={handleToggleBreak} className="bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/20 text-amber-700 dark:text-amber-500 ring-1 ring-amber-200/50 dark:ring-amber-500/20 px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-colors shadow-sm active:scale-95 flex items-center gap-2">
+                                    <Icons.Coffee size={14} /> На перерыв
+                                  </button>
                                   <button onClick={handleEndShift} className="bg-slate-800 hover:bg-slate-900 text-white dark:bg-slate-700 dark:hover:bg-slate-600 px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-colors shadow-sm active:scale-95">
                                     Завершить смену
                                   </button>
@@ -1687,7 +1690,7 @@
                                           </div>
                                           <div className="flex flex-col items-end gap-1.5">
                                              <span className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider ring-1 ring-slate-200 dark:ring-slate-700 shadow-sm">
-                                               {company.id}
+                                                {company.id}
                                              </span>
                                           </div>
                                        </div>
@@ -2010,7 +2013,7 @@
                                                return (
                                                  <div key={driver.id} onClick={(e) => handleToggleDriverSelect(driver.id, index, e, currentUncompletedDrivers)} className={`group p-4 rounded-2xl ring-1 cursor-pointer select-none flex items-start gap-4 transition-all duration-200 ${isSelected ? 'bg-blue-50 dark:bg-blue-500/10 ring-blue-400 dark:ring-blue-500 shadow-md transform scale-[0.99]' : isSensitive ? 'bg-amber-50/50 dark:bg-amber-500/5 ring-amber-200 dark:ring-amber-500/20 hover:ring-amber-400 dark:hover:ring-amber-500/50 shadow-sm hover:shadow-md' : 'bg-white dark:bg-slate-900 ring-slate-200 dark:ring-slate-800 hover:ring-blue-300 dark:hover:ring-blue-500/50 shadow-sm hover:shadow-md'}`}>
                                                     <div className={`mt-0.5 w-6 h-6 rounded-lg ring-1 flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-blue-600 ring-blue-600 text-white' : isSensitive ? 'ring-amber-300 bg-amber-100 dark:bg-amber-500/20 dark:ring-amber-500/30 text-amber-600 dark:text-amber-400' : 'ring-slate-300 dark:ring-slate-700 bg-slate-50 dark:bg-slate-800 group-hover:ring-blue-300 dark:group-hover:ring-blue-500/50'}`}>
-                                                       {isSelected && <Icons.CheckCircle size={14} />}
+                                                        {isSelected && <Icons.CheckCircle size={14} />}
                                                     </div>
                                                     <div className="min-w-0 flex-1">
                                                       <div className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight truncate flex items-center gap-2 mb-1">
