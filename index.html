@@ -20,6 +20,12 @@
             darkMode: 'class',
             theme: {
                 extend: {
+                    borderRadius: {
+                        'lg': '0.375rem', /* 6px */
+                        'xl': '0.5rem',   /* 8px */
+                        '2xl': '0.75rem', /* 12px (было 16) - более строгие формы */
+                        '3xl': '1rem',    /* 16px (было 24) - премиальные блоки */
+                    },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
                         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
@@ -65,38 +71,38 @@
         const { useState, useEffect, useMemo } = React;
 
         const Icons = {
-          Play: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>,
-          Square: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>,
-          Activity: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>,
-          Zap: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>,
-          Shield: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>,
-          AlertTriangle: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>,
-          CheckCircle: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>,
-          History: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v5h5"></path><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"></path><polyline points="12 7 12 12 15 15"></polyline></svg>,
-          X: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>,
-          Sidebar: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>,
-          ChevronDown: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>,
-          ChevronUp: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>,
-          Grid: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>,
-          List: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>,
-          Moon: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>,
-          Sun: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>,
-          Search: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>,
-          Clock: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>,
-          Filter: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>,
-          Phone: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>,
-          PhoneOff: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="23" y1="1" x2="1" y2="23"/></svg>,
-          MessageSquare: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>,
-          SortAsc: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5h10M11 9h7M11 13h4M3 7l3-3 3 3M6 6v14"/></svg>,
-          SortDesc: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5h10M11 9h7M11 13h4M3 17l3 3 3-3M6 18V4"/></svg>,
-          Coffee: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>,
-          Tag: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>,
-          Plus: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>,
-          Users: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>,
-          BarChart2: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>,
-          Building: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><path d="M9 22v-4h6v4"></path><path d="M8 6h.01"></path><path d="M16 6h.01"></path><path d="M12 6h.01"></path><path d="M12 10h.01"></path><path d="M12 14h.01"></path><path d="M16 10h.01"></path><path d="M16 14h.01"></path><path d="M8 10h.01"></path><path d="M8 14h.01"></path></svg>,
-          Copy: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>,
-          TrendingUp: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>,
+          Play: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>,
+          Square: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>,
+          Activity: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>,
+          Zap: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>,
+          Shield: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>,
+          AlertTriangle: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>,
+          CheckCircle: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>,
+          History: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v5h5"></path><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"></path><polyline points="12 7 12 12 15 15"></polyline></svg>,
+          X: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>,
+          Sidebar: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>,
+          ChevronDown: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>,
+          ChevronUp: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>,
+          Grid: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>,
+          List: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>,
+          Moon: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>,
+          Sun: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>,
+          Search: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>,
+          Clock: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>,
+          Filter: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>,
+          Phone: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>,
+          PhoneOff: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="23" y1="1" x2="1" y2="23"/></svg>,
+          MessageSquare: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>,
+          SortAsc: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5h10M11 9h7M11 13h4M3 7l3-3 3 3M6 6v14"/></svg>,
+          SortDesc: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5h10M11 9h7M11 13h4M3 17l3 3 3-3M6 18V4"/></svg>,
+          Coffee: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>,
+          Tag: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>,
+          Plus: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>,
+          Users: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>,
+          BarChart2: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>,
+          Building: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><path d="M9 22v-4h6v4"></path><path d="M8 6h.01"></path><path d="M16 6h.01"></path><path d="M12 6h.01"></path><path d="M12 10h.01"></path><path d="M12 14h.01"></path><path d="M16 10h.01"></path><path d="M16 14h.01"></path><path d="M8 10h.01"></path><path d="M8 14h.01"></path></svg>,
+          Copy: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>,
+          TrendingUp: ({ size = 18, className = "" }) => <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>,
         };
 
         const EMPLOYEES = [
@@ -502,6 +508,7 @@
           
           const [employeeSort, setEmployeeSort] = useState('default');
           const [activeShiftTab, setActiveShiftTab] = useState('1-я смена'); // Для новых табов
+          const [monitoringShiftTab, setMonitoringShiftTab] = useState('1-я смена'); // ТАБЫ ДЛЯ МОНИТОРИНГА
 
           const [isPatrolHistoryOpen, setIsPatrolHistoryOpen] = useState(true);
           const [isRequestsHistoryOpen, setIsRequestsHistoryOpen] = useState(true);
@@ -1077,10 +1084,11 @@
                       
                       {[
                         { id: 'workspace', icon: <Icons.Square size={18} />, label: 'Рабочее место' },
+                        { id: 'shift_status', icon: <Icons.Users size={18} />, label: 'Мониторинг смены' },
                         { id: 'history', icon: <Icons.History size={18} />, label: 'История' },
                         { id: 'attendance', icon: <Icons.Clock size={18} />, label: 'Журнал прихода' },
                         { id: 'companies', icon: <Icons.Building size={18} />, label: 'Компании' },
-                        { id: 'employees', icon: <Icons.Users size={18} />, label: 'Сотрудники' },
+                        { id: 'employees', icon: <Icons.BarChart2 size={18} />, label: 'Отчеты и KPI' },
                       ].map(item => (
                          <button 
                             key={item.id}
@@ -1181,6 +1189,7 @@
                       <button onClick={() => setLeftSidebarOpen(!leftSidebarOpen)} className="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all active:scale-95"><Icons.Sidebar size={20} /></button>
                       <h1 className="text-sm font-semibold text-slate-800 dark:text-slate-200 tracking-tight">
                         {activeTab === 'workspace' ? 'Рабочее пространство' : 
+                         activeTab === 'shift_status' ? 'Мониторинг смены' : 
                          activeTab === 'history' ? 'История обращений' : 
                          activeTab === 'companies' ? 'Компании и автопарки' : 
                          activeTab === 'employees' ? 'Отчеты сотрудников' : 'Журнал прихода'}
@@ -1294,6 +1303,203 @@
                                      <p>Ничего не найдено по запросу "{companySearch}"</p>
                                   </div>
                               )}
+                           </div>
+                        </div>
+                      )}
+
+                      {/* ВКЛАДКА: МОНИТОРИНГ СМЕНЫ */}
+                      {activeTab === 'shift_status' && (
+                        <div className="w-full max-w-7xl mx-auto mt-2 pb-10">
+                           <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                             <div>
+                               <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
+                                  <div className="p-2 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-lg"><Icons.Users size={24} /></div>
+                                  Мониторинг смены
+                               </h2>
+                               <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-2xl leading-relaxed">
+                                 Список сотрудников вашей смены. Ваши текущие действия (обходы, звонки, чаты) отображаются здесь в реальном времени.
+                               </p>
+                             </div>
+                           </div>
+
+                           {/* Табы смен для мониторинга */}
+                           <div className="flex overflow-x-auto hide-scrollbar mb-6 -mx-2 px-2 animate-in fade-in duration-300">
+                             <div className="flex p-1.5 bg-slate-200/50 dark:bg-slate-800/50 rounded-xl self-start ring-1 ring-slate-900/5 dark:ring-white/5">
+                               {['1-я смена', '2-я смена', '3-я смена'].map(shift => {
+                                 const isActive = monitoringShiftTab === shift;
+                                 return (
+                                   <button
+                                     key={shift}
+                                     onClick={() => setMonitoringShiftTab(shift)}
+                                     className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 ${
+                                       isActive 
+                                         ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
+                                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                     }`}
+                                   >
+                                     {shift === '1-я смена' ? <Icons.Sun size={16} className={isActive ? "text-amber-500" : "text-slate-400"} /> : 
+                                      shift === '2-я смена' ? <Icons.Moon size={16} className={isActive ? "text-indigo-500" : "text-slate-400"} /> : 
+                                      <Icons.Clock size={16} className={isActive ? "text-blue-500" : "text-slate-400"} />}
+                                     {shift}
+                                   </button>
+                                 );
+                               })}
+                             </div>
+                           </div>
+
+                           <div className="bg-white dark:bg-slate-900 rounded-3xl ring-1 ring-slate-200 dark:ring-slate-800 shadow-sm overflow-hidden animate-in fade-in duration-300">
+                              <div className="overflow-auto custom-scrollbar">
+                                <table className="w-full text-left border-collapse">
+                                  <thead className="bg-slate-50/50 dark:bg-slate-800/30 border-b border-slate-200 dark:border-slate-800">
+                                    <tr>
+                                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Сотрудник</th>
+                                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Статус</th>
+                                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Текущие задачи</th>
+                                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Время / Смена</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                                    {/* Строка текущего пользователя (Сотрудник Д.) */}
+                                    {(() => {
+                                        const isMyShift = (currentShift && currentShift.includes(monitoringShiftTab)) || (!currentShift && monitoringShiftTab === '1-я смена');
+                                        if (!isMyShift) return null;
+
+                                        const activeCalls = activeRequests.filter(r => r.type === 'call');
+                                        const activeChats = activeRequests.filter(r => r.type === 'message');
+                                        const isBusy = activePatrol || activeCalls.length > 0 || activeChats.length > 0;
+                                        
+                                        let statusText = 'Офлайн';
+                                        let statusDot = 'bg-slate-400';
+                                        let statusBg = 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400';
+                                        
+                                        if (shiftState === 'Break') {
+                                            statusText = 'Перерыв'; statusDot = 'bg-amber-500'; statusBg = 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400';
+                                        } else if (shiftState === 'Active') {
+                                            if (isBusy) {
+                                                statusText = 'В работе'; statusDot = 'bg-blue-500 animate-pulse'; statusBg = 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400';
+                                            } else {
+                                                statusText = 'Свободен'; statusDot = 'bg-emerald-500'; statusBg = 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400';
+                                            }
+                                        }
+
+                                        return (
+                                          <tr className="hover:bg-blue-50/30 dark:hover:bg-blue-900/20 transition-colors group bg-blue-50/10 dark:bg-blue-900/5 relative">
+                                            <td className="px-6 py-5 relative">
+                                              <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
+                                              <div className="flex items-center gap-3">
+                                                  <div className="relative">
+                                                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 text-blue-700 dark:text-blue-300 flex items-center justify-center font-bold text-sm ring-1 ring-white/50 dark:ring-white/10 shadow-inner">
+                                                          ТС
+                                                      </div>
+                                                      <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white dark:border-slate-900 ${statusDot}`}></span>
+                                                  </div>
+                                                  <div>
+                                                      <div className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">Сотрудник Д. <span className="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 px-2 py-0.5 rounded-md uppercase tracking-wider">Вы</span></div>
+                                                      <div className="text-[10px] text-slate-500 uppercase tracking-widest mt-0.5">Диспетчер 1-й линии</div>
+                                                  </div>
+                                              </div>
+                                            </td>
+                                            <td className="px-6 py-5">
+                                              <span className={`px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 w-max ring-1 ring-inset ring-black/5 dark:ring-white/5 ${statusBg}`}>
+                                                  {statusText}
+                                              </span>
+                                            </td>
+                                            <td className="px-6 py-5">
+                                              <div className="flex flex-col gap-2.5">
+                                                  {shiftState === 'Offline' && <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">Смена не начата</span>}
+                                                  {shiftState === 'Break' && <span className="text-xs font-semibold text-amber-500 flex items-center gap-2"><Icons.Coffee size={14}/> На перерыве</span>}
+                                                  {shiftState === 'Active' && !isBusy && <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-500 flex items-center gap-2"><Icons.CheckCircle size={14}/> Ожидает обращений</span>}
+                                                  
+                                                  {shiftState === 'Active' && activePatrol && (
+                                                      <div className="flex items-center justify-between text-[11px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-500/10 px-3 py-2 rounded-xl w-full max-w-sm ring-1 ring-blue-200 dark:ring-blue-500/20 shadow-sm transition-all hover:shadow-md cursor-pointer" onClick={() => setActiveWorkspaceView('patrol')}>
+                                                          <div className="flex items-center gap-2"><Icons.Activity size={14}/> Обход: {activePatrol.company.name}</div>
+                                                          <span className="bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded shadow-sm">{activePatrol.company.fleetSize} ТС</span>
+                                                      </div>
+                                                  )}
+                                                  {shiftState === 'Active' && activeCalls.map(req => (
+                                                      <div key={req.id} className="flex items-center justify-between text-[11px] font-bold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-500/10 px-3 py-2 rounded-xl w-full max-w-sm ring-1 ring-rose-200 dark:ring-rose-500/20 shadow-sm transition-all hover:shadow-md cursor-pointer" onClick={() => handleSwitchWorkspace('request', req.id)}>
+                                                          <div className="flex items-center gap-2">
+                                                            <div className="relative flex h-2 w-2 shrink-0"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span></div>
+                                                            Звонок: {req.driver.name.split(' ')[0]}
+                                                          </div>
+                                                          <span className="bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded shadow-sm font-mono"><RequestTimer startTime={req.startTime} isEnded={false} /></span>
+                                                      </div>
+                                                  ))}
+                                                  {shiftState === 'Active' && activeChats.map(req => (
+                                                      <div key={req.id} className="flex items-center justify-between text-[11px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-500/10 px-3 py-2 rounded-xl w-full max-w-sm ring-1 ring-indigo-200 dark:ring-indigo-500/20 shadow-sm transition-all hover:shadow-md cursor-pointer" onClick={() => handleSwitchWorkspace('request', req.id)}>
+                                                          <div className="flex items-center gap-2"><Icons.MessageSquare size={14}/> Чат: {req.driver.name.split(' ')[0]}</div>
+                                                          <span className="bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded shadow-sm opacity-70">{req.driver.truck}</span>
+                                                      </div>
+                                                  ))}
+                                              </div>
+                                            </td>
+                                            <td className="px-6 py-5">
+                                               {shiftState === 'Offline' ? <span className="text-xs text-slate-400 font-mono font-bold px-2 py-1 rounded bg-slate-100 dark:bg-slate-800/50">--:--</span> :
+                                                shiftState === 'Break' ? (
+                                                  <span className="text-xs font-mono font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded ring-1 ring-amber-200/50 dark:ring-amber-500/30">
+                                                     <LiveBreakTimer totalBreakTimeMs={attendanceLogs[0].totalBreakTimeMs} isBreak={shiftState === 'Break'} currentBreakStart={attendanceLogs[0].currentBreakStart} />
+                                                  </span>
+                                                ) : (
+                                                  <span className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-950 px-2 py-1 rounded ring-1 ring-slate-200 dark:ring-slate-700 shadow-sm">
+                                                     <LiveShiftTimer loginTimestamp={attendanceLogs[0].loginTimestamp} totalBreakTimeMs={attendanceLogs[0].totalBreakTimeMs} isBreak={shiftState === 'Break'} currentBreakStart={attendanceLogs[0].currentBreakStart} />
+                                                  </span>
+                                                )}
+                                            </td>
+                                          </tr>
+                                        );
+                                    })()}
+
+                                    {/* Коллеги выбранной смены */}
+                                    {MOCK_EMPLOYEES.filter(emp => emp.shift === monitoringShiftTab).slice(0, 5).map((emp, i) => {
+                                        let statusText = 'Офлайн';
+                                        let statusDot = 'bg-slate-400';
+                                        let statusBg = 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400';
+                                        let tasks = <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">Нет на смене</span>;
+                                        
+                                        // Назначаем псевдо-реалистичные статусы
+                                        if (i === 0) {
+                                           statusText = 'Свободен'; statusDot = 'bg-emerald-500'; statusBg = 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400';
+                                           tasks = <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-500 flex items-center gap-2"><Icons.CheckCircle size={14}/> Ожидает обращений</span>;
+                                        } else if (i === 1) {
+                                           statusText = 'В работе'; statusDot = 'bg-blue-500'; statusBg = 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400';
+                                           tasks = <div className="flex items-center justify-between text-[11px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-500/10 px-3 py-2 rounded-xl w-full max-w-sm ring-1 ring-indigo-200 dark:ring-indigo-500/20 shadow-sm"><div className="flex items-center gap-2"><Icons.MessageSquare size={14}/> Чат: Водитель #{Math.floor(Math.random() * 100)}</div></div>;
+                                        } else if (i === 2) {
+                                           statusText = 'В работе'; statusDot = 'bg-blue-500'; statusBg = 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400';
+                                           tasks = <div className="flex items-center justify-between text-[11px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-500/10 px-3 py-2 rounded-xl w-full max-w-sm ring-1 ring-blue-200 dark:ring-blue-500/20 shadow-sm"><div className="flex items-center gap-2"><Icons.Activity size={14}/> Обход: Автопарк</div></div>;
+                                        } else if (i === 3 && monitoringShiftTab === '1-я смена') {
+                                           statusText = 'Перерыв'; statusDot = 'bg-amber-500'; statusBg = 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400';
+                                           tasks = <span className="text-xs font-semibold text-amber-500 flex items-center gap-2"><Icons.Coffee size={14}/> На перерыве</span>;
+                                        }
+
+                                        return (
+                                          <tr key={emp.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group">
+                                            <td className="px-6 py-5">
+                                              <div className="flex items-center gap-3">
+                                                  <div className="relative">
+                                                      <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center font-bold text-sm ring-1 ring-slate-200 dark:ring-slate-700">{emp.name.charAt(0)}</div>
+                                                      <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white dark:border-slate-900 ${statusDot}`}></span>
+                                                  </div>
+                                                  <div className={statusText === 'Офлайн' ? 'opacity-50' : ''}>
+                                                      <div className="font-bold text-sm text-slate-900 dark:text-white">{emp.name}</div>
+                                                      <div className="text-[10px] text-slate-500 uppercase tracking-widest mt-0.5">Диспетчер</div>
+                                                  </div>
+                                              </div>
+                                            </td>
+                                            <td className="px-6 py-5"><span className={`px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-widest ${statusBg}`}>{statusText}</span></td>
+                                            <td className="px-6 py-5">{tasks}</td>
+                                            <td className="px-6 py-5">
+                                                {statusText === 'Офлайн' 
+                                                    ? <span className="text-xs text-slate-400 font-mono font-bold px-2 py-1 rounded bg-slate-100 dark:bg-slate-800/50">--:--</span>
+                                                    : <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg uppercase">{emp.shift}</span>
+                                                }
+                                            </td>
+                                          </tr>
+                                        )
+                                    })}
+
+                                  </tbody>
+                                </table>
+                              </div>
                            </div>
                         </div>
                       )}
